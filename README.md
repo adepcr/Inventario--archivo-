@@ -66,7 +66,7 @@ No se usa correo para recuperar contraseñas. Todo se hace desde la app, con el 
 - **Cambiar mi contraseña:** pide la actual y la nueva (mínimo 8 caracteres).
 - **Restablecer contraseña de un compañero:** para quien la olvidó. Se elige a la persona, la app genera una contraseña temporal (por ejemplo `KMPT-4827-QXRA`) y se le dicta o se le envía por otro medio. Su contraseña anterior deja de servir y se cierran sus sesiones abiertas.
 - Quien entra con una contraseña temporal debe **crear una propia** antes de usar la app.
-- Cada restablecimiento queda anotado en la tabla `claves_restablecidas` (quién, a quién y cuándo), visible solo desde el panel de Supabase.
+- Cada restablecimiento y cada cambio de contraseña queda en el **Historial** (quién, a quién y cuándo).
 
 Si nadie puede entrar (por ejemplo, todos olvidaron la contraseña), el administrador la cambia en **SQL Editor**:
 
@@ -77,6 +77,16 @@ set encrypted_password = extensions.crypt('Temporal-2026', extensions.gen_salt('
 where email = 'persona@correo.com';
 ```
 
+### 5. Historial
+
+El botón **Historial** muestra, del más reciente al más antiguo, quién hizo qué y cuándo:
+
+- **Archivos:** agregó, editó (con lo que cambió, por ejemplo `Estante: 4 → 6`) y eliminó.
+- **Contraseñas:** restableció la contraseña de un compañero, o cambió la suya.
+- Se puede filtrar por *Todo*, *Archivos* o *Contraseñas*.
+
+El historial lo escribe la base de datos: desde la app **nadie lo puede editar ni borrar**. Los cambios hechos directamente desde el panel de Supabase aparecen como *Administrador (panel de Supabase)*.
+
 ## Instalar como app
 
 - **Android (Chrome):** menú ⋮ → *Instalar app* / *Agregar a la pantalla principal*.
@@ -86,8 +96,8 @@ where email = 'persona@correo.com';
 ## Administración
 
 ```sql
--- Últimos 50 cambios
-select fecha, accion, correo, coalesce(despues, antes) as archivo
+-- Últimos 50 movimientos (también se ven en la app, botón Historial)
+select fecha, accion, correo, coalesce(despues, antes) as detalle
 from public.historial order by fecha desc limit 50;
 
 -- Recuperar un archivo eliminado (cambie 1234 por el archivo_id del historial)
