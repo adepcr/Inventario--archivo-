@@ -20,7 +20,7 @@
 </head>
 <body>
 
-<!-- Pantalla de inicio de sesión -->
+<!-- Pantallas sin sesión: ingresar, olvidé mi contraseña y crear contraseña nueva -->
 <section class="login" id="loginView" hidden>
   <form class="login-card" id="loginForm" novalidate>
     <h1><small>Inventario detallado</small>Archivo General</h1>
@@ -28,7 +28,30 @@
     <div class="field"><label for="lCorreo">Correo</label><input id="lCorreo" type="email" autocomplete="username" required></div>
     <div class="field"><label for="lClave">Contraseña</label><input id="lClave" type="password" autocomplete="current-password" required></div>
     <p class="formerr" id="loginErr" hidden></p>
+    <p class="formok" id="loginOk" hidden></p>
     <button class="btn primary" type="submit" id="loginBtn">Ingresar</button>
+    <button class="linkbtn" type="button" id="olvidoLink">¿Olvidó su contraseña?</button>
+  </form>
+
+  <form class="login-card" id="olvidoForm" novalidate hidden>
+    <h1><small>Inventario detallado</small>Archivo General</h1>
+    <h2>Restablecer contraseña</h2>
+    <p class="hint">Escriba su correo. Le enviaremos un enlace para crear una contraseña nueva.</p>
+    <div class="field"><label for="oCorreo">Correo</label><input id="oCorreo" type="email" autocomplete="username" required></div>
+    <p class="formerr" id="olvidoErr" hidden></p>
+    <p class="formok" id="olvidoOk" hidden></p>
+    <button class="btn primary" type="submit" id="olvidoBtn">Enviar enlace</button>
+    <button class="linkbtn" type="button" id="volverLink">Volver a ingresar</button>
+  </form>
+
+  <form class="login-card" id="nuevaForm" novalidate hidden>
+    <h1><small>Inventario detallado</small>Archivo General</h1>
+    <h2>Contraseña nueva</h2>
+    <p class="hint" id="nuevaHint">Escriba su nueva contraseña. Debe tener al menos 8 caracteres.</p>
+    <div class="field"><label for="nClave">Contraseña nueva</label><input id="nClave" type="password" autocomplete="new-password" required></div>
+    <div class="field"><label for="nClave2">Repita la contraseña</label><input id="nClave2" type="password" autocomplete="new-password" required></div>
+    <p class="formerr" id="nuevaErr" hidden></p>
+    <button class="btn primary" type="submit" id="nuevaBtn">Guardar contraseña</button>
   </form>
 </section>
 

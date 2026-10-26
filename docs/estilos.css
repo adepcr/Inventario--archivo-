@@ -74,11 +74,12 @@ main .wrap { padding-block: 16px 48px; }
 .status.err { color: var(--danger); }
 
 .list { display: grid; gap: 8px; }
-.item { display: grid; grid-template-columns: 210px minmax(0, 1fr) auto; gap: 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
-.loc { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 6px; }
-.loc div { background: var(--tag); color: var(--tag-fg); border-radius: 4px; padding: 4px 8px; text-align: center; min-width: 52px; }
+.item { display: grid; grid-template-columns: 17rem minmax(0, 1fr) auto; gap: 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+/* Estante y Bloque angostos; Nivel ("1 FRONTAL", "5 TRASERO") toma el resto y, si no cabe, baja de línea en vez de cortarse */
+.loc { display: grid; grid-template-columns: 4rem minmax(0, 1fr) 4rem; gap: 6px; }
+.loc div { background: var(--tag); color: var(--tag-fg); border-radius: 4px; padding: 4px 8px; text-align: center; min-width: 0; }
 .loc small { display: block; font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
-.loc b { font-family: var(--font-mono); font-weight: 600; font-size: .95rem; white-space: nowrap; }
+.loc b { display: block; font-family: var(--font-mono); font-weight: 600; font-size: .95rem; overflow-wrap: anywhere; }
 .desc { min-width: 0; }
 .desc .tipo { font-weight: 700; font-family: var(--font-display); font-size: 1.05rem; letter-spacing: .01em; overflow-wrap: anywhere; }
 .desc .meta { display: flex; gap: 6px 14px; flex-wrap: wrap; color: var(--muted); font-size: .86rem; margin-top: 2px; }
@@ -109,7 +110,7 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; paddi
   .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .filters .clear { grid-column: 1 / -1; }
   .item { grid-template-columns: minmax(0, 1fr) auto; }
-  .loc { grid-column: 1 / -1; }
+  .loc { grid-column: 1 / -1; grid-template-columns: 4rem minmax(0, 11rem) 4rem; }
 }
 @media (max-width: 480px) {
   header.top { position: static; }
@@ -125,5 +126,8 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; paddi
 .login-card { width: min(380px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 24px; display: grid; gap: 14px; }
 .login-card .hint { margin: 0; }
 .login-card .btn { padding-block: 11px; }
+.login-card h2 { font-family: var(--font-display); font-size: 1.3rem; margin: 0; }
+.linkbtn { background: none; border: 0; padding: 4px 0; color: var(--accent); font-weight: 600; font-size: .88rem; justify-self: center; text-decoration: underline; text-underline-offset: 3px; }
+.formok { color: var(--accent); font-size: .9rem; margin: 0; }
 .who { align-self: center; font-size: .82rem; color: var(--muted); max-width: 26ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 480px) { .who { flex-basis: 100%; } }
