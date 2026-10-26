@@ -8,14 +8,14 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Inventario Archivo General</title>
 <meta name="description" content="Buscador del inventario del Archivo General: estante, nivel y bloque de cada archivo.">
-<meta name="theme-color" content="#1f5f4f">
+<meta name="theme-color" content="#006b35">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="iconos/icono-192.png" type="image/png">
 <link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Archivo">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
@@ -23,7 +23,8 @@
 <!-- Pantallas sin sesión: ingresar, olvidé mi contraseña y crear contraseña nueva -->
 <section class="login" id="loginView" hidden>
   <form class="login-card" id="loginForm" novalidate>
-    <h1><small>Inventario detallado</small>Archivo General</h1>
+    <img class="login-logo" src="iconos/logo-adep.png" alt="Logo de ADEP" width="88" height="88">
+    <h1><small>ADEP · Inventario detallado</small>Archivo General</h1>
     <p class="hint">Ingrese con el correo y la contraseña que le dio el administrador.</p>
     <div class="field"><label for="lCorreo">Correo</label><input id="lCorreo" type="email" autocomplete="username" required></div>
     <div class="field"><label for="lClave">Contraseña</label><input id="lClave" type="password" autocomplete="current-password" required></div>
@@ -33,7 +34,8 @@
   </form>
 
   <form class="login-card" id="olvidoForm" novalidate hidden>
-    <h1><small>Inventario detallado</small>Archivo General</h1>
+    <img class="login-logo" src="iconos/logo-adep.png" alt="Logo de ADEP" width="88" height="88">
+    <h1><small>ADEP · Inventario detallado</small>Archivo General</h1>
     <h2>Restablecer contraseña</h2>
     <p class="hint">Escriba su correo. Le enviaremos un enlace para crear una contraseña nueva.</p>
     <div class="field"><label for="oCorreo">Correo</label><input id="oCorreo" type="email" autocomplete="username" required></div>
@@ -45,7 +47,8 @@
   </form>
 
   <form class="login-card" id="nuevaForm" novalidate hidden>
-    <h1><small>Inventario detallado</small>Archivo General</h1>
+    <img class="login-logo" src="iconos/logo-adep.png" alt="Logo de ADEP" width="88" height="88">
+    <h1><small>ADEP · Inventario detallado</small>Archivo General</h1>
     <h2>Cree su contraseña</h2>
     <p class="hint" id="nuevaHint">Entró con una contraseña temporal. Cree una propia de al menos 8 caracteres para continuar.</p>
     <div class="field"><label for="nClave">Contraseña nueva</label><input id="nClave" type="password" autocomplete="new-password" required></div>
@@ -60,7 +63,10 @@
 <header class="top">
   <div class="wrap">
     <div class="titlebar">
-      <h1><small>Inventario detallado</small>Archivo General</h1>
+      <div class="marca">
+        <img class="logo" src="iconos/logo-adep.png" alt="Logo de ADEP" width="48" height="48">
+        <h1><small>ADEP · Inventario detallado</small>Archivo General</h1>
+      </div>
       <div class="actions">
         <span class="who" id="who"></span>
         <button class="btn" id="histBtn" type="button">Historial</button>
@@ -90,6 +96,11 @@
     <div class="more" id="moreWrap" hidden><button class="btn" id="moreBtn" type="button">Mostrar más</button></div>
   </div>
 </main>
+
+<footer class="app-footer">
+  <p class="lema">Comprensión · Fraternidad · Cooperación</p>
+  <p>Asociación de Educadores Pensionados · Archivo General</p>
+</footer>
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
