@@ -113,6 +113,12 @@ function setStatus(msg, err) { const s = $("status"); s.textContent = msg; s.cla
 
 // ---------- Conexión con Supabase ----------
 const COLUMNAS = "id, estante, nivel, bloque, anio, tipo, contenido, area";
+// Se revisa ANTES de crear el cliente: al abrir el enlace del correo de "olvidé mi contraseña"
+// la dirección trae type=recovery (o un error si el enlace venció)
+const enlaceRecuperacion = /type=recovery/.test(location.hash + location.search);
+let errorEnlace = /error_code=|error_description=/.test(location.hash + location.search);
+let modoRecuperacion = enlaceRecuperacion;
+
 const sb = window.supabase.createClient(window.CONFIG.SUPABASE_URL, window.CONFIG.SUPABASE_KEY);
 
 // Traduce los errores de Supabase a mensajes claros
@@ -122,6 +128,9 @@ function mensajeError(error) {
   if (/Invalid login credentials/i.test(m)) return "Correo o contraseña incorrectos.";
   if (/Email not confirmed/i.test(m)) return "El correo aún no está confirmado. Pida ayuda al administrador.";
   if (/Failed to fetch|NetworkError|network/i.test(m)) return "No hay conexión a internet. Revise la conexión e intente de nuevo.";
+  if (/rate limit|only request this after|too many/i.test(m)) return "Se pidieron demasiados correos seguidos. Espere unos minutos e intente de nuevo.";
+  if (/should be different from the old/i.test(m)) return "La contraseña nueva debe ser distinta a la anterior.";
+  if (/Password should be at least|weak.?password/i.test(m)) return "La contraseña es muy débil. Use al menos 8 caracteres, mezclando letras y números.";
   if (/JWT|session|refresh token/i.test(m)) return "La sesión venció. Vuelva a ingresar.";
   return m;
 }
@@ -235,6 +244,54 @@ function mostrarVista(conSesion) {
   $("appView").hidden = !conSesion;
 }
 
+// Muestra una de las tarjetas sin sesión: "loginForm", "olvidoForm" o "nuevaForm"
+function mostrarTarjeta(id) {
+  ["loginForm", "olvidoForm", "nuevaForm"].forEach(t => $(t).hidden = t !== id);
+  ["loginErr", "loginOk", "olvidoErr", "olvidoOk", "nuevaErr"].forEach(t => $(t).hidden = true);
+  mostrarVista(false);
+  const foco = { loginForm: "lCorreo", olvidoForm: "oCorreo", nuevaForm: "nClave" }[id];
+  setTimeout(() => $(foco).focus(), 30);
+}
+const aviso = (id, texto) => { $(id).textContent = texto; $(id).hidden = false; };
+const limpiarDireccion = () => history.replaceState(null, "", location.pathname);
+
+$("olvidoLink").addEventListener("click", () => {
+  $("oCorreo").value = $("lCorreo").value.trim();
+  mostrarTarjeta("olvidoForm");
+});
+$("volverLink").addEventListener("click", () => mostrarTarjeta("loginForm"));
+
+$("olvidoForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const correo = $("oCorreo").value.trim();
+  $("olvidoErr").hidden = true; $("olvidoOk").hidden = true;
+  if (!/^\S+@\S+\.\S+$/.test(correo)) { aviso("olvidoErr", "Escriba un correo válido."); return; }
+  $("olvidoBtn").disabled = true;
+  // El enlace del correo vuelve a esta misma página
+  const { error } = await sb.auth.resetPasswordForEmail(correo, { redirectTo: location.origin + location.pathname });
+  $("olvidoBtn").disabled = false;
+  if (error) { aviso("olvidoErr", mensajeError(error)); return; }
+  // Mismo mensaje exista o no el correo, para no revelar quién tiene cuenta
+  aviso("olvidoOk", "Si ese correo tiene cuenta, le llegará un enlace en unos minutos. Revise también la carpeta de spam.");
+});
+
+$("nuevaForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const clave = $("nClave").value, clave2 = $("nClave2").value;
+  $("nuevaErr").hidden = true;
+  if (clave.length < 8) { aviso("nuevaErr", "La contraseña debe tener al menos 8 caracteres."); return; }
+  if (clave !== clave2) { aviso("nuevaErr", "Las dos contraseñas no coinciden."); return; }
+  $("nuevaBtn").disabled = true;
+  const { data: res, error } = await sb.auth.updateUser({ password: clave });
+  $("nuevaBtn").disabled = false;
+  if (error) { aviso("nuevaErr", mensajeError(error)); return; }
+  $("nClave").value = $("nClave2").value = "";
+  modoRecuperacion = false;
+  limpiarDireccion();
+  await entrar(res.user);
+  toast("Contraseña actualizada");
+});
+
 $("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   const correo = $("lCorreo").value.trim(), clave = $("lClave").value;
@@ -264,8 +321,8 @@ function salir() {
   ["fArea", "fAnio", "fTipo", "fCont"].forEach(id => $(id).value = ""); shelfSel = ""; limit = PAGE; confirmId = freshId = null;
   $("list").innerHTML = ""; $("count").textContent = "Cargando inventario…"; setStatus("");
   openSheet(false);
-  mostrarVista(false);
-  setTimeout(() => $("lCorreo").focus(), 30);
+  mostrarTarjeta("loginForm");
+  if (faltaConfig) aviso("loginErr", "Falta configurar la conexión: complete config.js con los datos de su proyecto de Supabase.");
 }
 
 async function recargar() {
@@ -278,14 +335,28 @@ async function recargar() {
   }
 }
 
-if (/SU-PROYECTO|PEGUE-AQUI/.test(window.CONFIG.SUPABASE_URL + window.CONFIG.SUPABASE_KEY)) {
-  $("loginErr").textContent = "Falta configurar la conexión: complete config.js con los datos de su proyecto de Supabase.";
-  $("loginErr").hidden = false;
-}
+const faltaConfig = /SU-PROYECTO|PEGUE-AQUI/.test(window.CONFIG.SUPABASE_URL + window.CONFIG.SUPABASE_KEY);
 
 sb.auth.onAuthStateChange((evento, sesion) => {
+  if (evento === "PASSWORD_RECOVERY") modoRecuperacion = true;
   // Se difiere para no llamar a Supabase dentro del aviso de cambio de sesión
-  setTimeout(() => { sesion && sesion.user ? entrar(sesion.user) : salir(); }, 0);
+  setTimeout(() => {
+    if (modoRecuperacion && sesion && sesion.user) {
+      // Llegó desde el enlace del correo: primero debe crear la contraseña nueva
+      usuarioActual = null;
+      $("nuevaHint").textContent = `Escriba la nueva contraseña para ${sesion.user.email}. Debe tener al menos 8 caracteres.`;
+      mostrarTarjeta("nuevaForm");
+    } else if (sesion && sesion.user) {
+      entrar(sesion.user);
+    } else {
+      salir();
+      if (errorEnlace) {
+        errorEnlace = false;
+        limpiarDireccion();
+        aviso("loginErr", "El enlace para restablecer la contraseña venció o ya se usó. Pida uno nuevo con «¿Olvidó su contraseña?».");
+      }
+    }
+  }, 0);
 });
 
 // Al volver a la app (otra pestaña, celular desbloqueado) trae los cambios que hicieron otras personas
