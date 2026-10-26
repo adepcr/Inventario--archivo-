@@ -8,8 +8,8 @@ Guía para traspasar la app a otra persona y que siga funcionando sin depender d
 
 | Qué | Dónde |
 |---|---|
-| App | https://12027-0289.github.io/Inventario--archivo-/ |
-| Código (este repositorio) | https://github.com/12027-0289/Inventario--archivo- |
+| App | https://adepcr.github.io/Inventario--archivo-/ |
+| Código (este repositorio) | https://github.com/adepcr/Inventario--archivo- (organización `adepcr`) |
 | Base de datos y usuarios | https://supabase.com/dashboard (proyecto `inventario-archivo`) |
 | Correo que envía los avisos | `encuesta@adepcr.org` (Microsoft 365, cuenta de la institución) |
 | Instrucciones técnicas | [README.md](README.md) |
@@ -36,16 +36,14 @@ No se entregan las contraseñas personales de quien se va: **se agrega a la pers
 
 ### GitHub (la página)
 
-Elegir una:
+El repositorio está en la **organización `adepcr`** de GitHub, que es de la institución. No hay que transferirlo: solo cambiar quién lo administra.
 
-- **A. La cuenta `12027-0289` es de la institución:** se entrega la cuenta (correo y contraseña, con su verificación en dos pasos) a la persona nueva o a TI. No cambia nada más.
-- **B. La cuenta es personal:** se traspasa el repositorio.
-  - [ ] Repositorio → **Settings → General → Transfer ownership** → cuenta de GitHub de la persona nueva (o de una organización de la institución).
-  - [ ] En la cuenta nueva: **Settings → Pages** → *Deploy from a branch* → **main** / **/docs** → **Save**.
-  - [ ] El enlace de la app cambia a `https://CUENTA-NUEVA.github.io/Inventario--archivo-/`. En Supabase, actualizar:
-    - **Authentication → URL Configuration → Site URL**
-    - **Authentication → URL Configuration → Redirect URLs** (agregar `https://CUENTA-NUEVA.github.io/Inventario--archivo-/**`)
-  - [ ] Avisar el enlace nuevo a los usuarios para que reinstalen la app.
+- [ ] Organización `adepcr` → **People → Invite member** → cuenta de GitHub de la persona nueva → rol **Owner**.
+- [ ] La persona acepta la invitación y aparece como **Owner**.
+- [ ] Que siempre haya **al menos dos Owners** (por ejemplo, la jefatura y alguien de informática).
+- [ ] Recién entonces, quien se va puede salir de la organización (**People** → su nombre → **Remove from organization**) o quedar como **Member**.
+
+El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia al cambiar de administradores.
 
 ### Correo `encuesta@adepcr.org`
 
