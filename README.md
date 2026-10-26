@@ -6,6 +6,7 @@ Aplicación web para buscar los archivos del Archivo General por categoría (ár
 - **Datos:** [Supabase](https://supabase.com) (base de datos PostgreSQL en la nube, plan gratis)
 - **Página:** GitHub Pages, carpeta [`docs/`](docs)
 - Se puede **instalar como app** en celular y computadora.
+- **¿Traspasar el proyecto a otra persona?** Vea [ENTREGA.md](ENTREGA.md).
 
 ## Seguridad
 
