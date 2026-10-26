@@ -12,6 +12,10 @@
   --g-mint: #8ff0bd;
   --r: #e52521;          /* rojo ADEP */
   --r-soft: #fcebea;
+  --vino: #c8102e;       /* rojo vino de los botones principales */
+  --vino-dark: #a50d26;
+  --btn-line: #d3d9d6;   /* borde gris de los botones secundarios */
+  --btn-ink: #1d2622;
   --gold: #b8860b;
   --gold-soft: #fbf4dd;
   --ink: #17241e;
@@ -52,19 +56,24 @@ button { cursor: pointer; }
 
 .wrap { max-width: 1160px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
-/* ---------- Botones ---------- */
+/* ---------- Botones ----------
+   Secundarios: blancos con borde gris y letra oscura.
+   Principal: rojo vino con letra blanca. "Limpiar": borde punteado. */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   min-height: 42px; padding: 0 1.15rem;
   font-weight: 700; font-size: .92rem;
-  background: transparent; color: var(--g-dark);
-  border: 2px solid var(--line-strong); border-radius: 999px;
+  background: var(--surface); color: var(--btn-ink);
+  border: 2px solid var(--btn-line); border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(23, 36, 30, .06);
   transition: background .2s, border-color .2s, transform .15s, box-shadow .2s;
 }
-.btn:hover { background: var(--surface); border-color: var(--g); }
+.btn:hover { background: #f6f8f7; border-color: #b9c3be; }
 .btn:active { transform: translateY(1px); }
-.btn.primary { background: var(--g); color: #fff; border-color: var(--g); box-shadow: 0 10px 20px -12px rgba(0, 135, 68, .9); }
-.btn.primary:hover { background: var(--g-dark); border-color: var(--g-dark); }
+.btn.primary { background: var(--vino); color: #fff; border-color: var(--vino); box-shadow: 0 10px 20px -12px rgba(200, 16, 46, .85); }
+.btn.primary:hover { background: var(--vino-dark); border-color: var(--vino-dark); }
+.btn.clear { background: #f3f5f4; color: #4a5550; border-style: dashed; box-shadow: none; }
+.btn.clear:hover { background: #eaeeec; border-color: #a9b4ae; }
 .btn.danger { background: var(--r); color: #fff; border-color: var(--r); box-shadow: 0 10px 20px -12px rgba(229, 37, 33, .8); }
 .btn.danger:hover { background: #c41e1a; border-color: #c41e1a; }
 .btn.small { min-height: 34px; padding: 0 .9rem; font-size: .82rem; }
@@ -173,9 +182,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   transition: background .15s, border-color .15s, color .15s;
 }
 .shelf:hover { border-color: var(--g); background: var(--g-soft); }
-.shelf b { font-family: var(--font-display); font-weight: 800; color: var(--head); }
+.shelf b { font-family: var(--font-display); font-weight: 800; color: var(--g); }
 .shelf span { color: var(--ink-soft); font-size: .8rem; }
-.shelf[aria-pressed="true"] { background: var(--g-deep); border-color: var(--g-deep); color: #fff; box-shadow: 0 8px 16px -10px rgba(4, 73, 42, .8); }
+.shelf[aria-pressed="true"] { background: var(--g); border-color: var(--g); color: #fff; box-shadow: 0 8px 16px -8px rgba(0, 135, 68, .8); }
 .shelf[aria-pressed="true"] b, .shelf[aria-pressed="true"] span { color: inherit; }
 .shelf[aria-pressed="true"] span { opacity: .8; }
 
@@ -264,7 +273,7 @@ mark { background: linear-gradient(transparent 55%, rgba(143, 240, 189, .7) 55%)
   background: linear-gradient(90deg, transparent 70%, var(--r) 70% 78%, transparent 78%);
 }
 .sheet h2 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -.01em; }
-.sheet header .btn { color: #fff; border-color: rgba(255, 255, 255, .45); }
+.sheet header .btn { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .45); box-shadow: none; }
 .sheet header .btn:hover { background: rgba(255, 255, 255, .15); border-color: #fff; }
 .sheet > form, .sheet-body { padding: 18px 20px; display: grid; gap: 14px; overflow-y: auto; flex: 1; align-content: start; }
 .sheet-body { gap: 22px; }
