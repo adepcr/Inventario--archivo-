@@ -61,12 +61,27 @@ Cada vez que se cambie algo en `docs/` y se haga commit, GitHub Pages publica la
 
 ### 4. Contraseñas
 
-No se usa correo para recuperar contraseñas. Todo se hace desde la app, con el botón **Cuenta**:
+**¿Olvidó su contraseña? (por correo)**
+En la pantalla de ingreso, la persona escribe su correo y recibe un enlace. Al abrirlo, la app le pide la contraseña nueva y entra. Si el enlace venció o ya se usó, la app lo indica.
 
+Configuración en Supabase (ya hecha):
+- **Authentication → Emails → SMTP Settings** (*Enable custom SMTP*): remitente `encuesta@adepcr.org`, host `smtp.office365.com`, puerto `587`, usuario `encuesta@adepcr.org` y la contraseña de ese correo. Si se cambia la contraseña de ese correo, hay que actualizarla aquí o dejarán de llegar los mensajes.
+- **Authentication → URL Configuration → Redirect URLs**: `https://12027-0289.github.io/Inventario--archivo-/**`
+- Opcional, correo en español: **Authentication → Emails → Templates → Reset Password**
+  - Asunto: `Restablecer contraseña - Inventario Archivo General`
+  - Mensaje:
+    ```html
+    <h2>Restablecer contraseña</h2>
+    <p>Se pidió cambiar la contraseña del Inventario del Archivo General para este correo.</p>
+    <p><a href="{{ .ConfirmationURL }}">Crear contraseña nueva</a></p>
+    <p>Si usted no lo pidió, ignore este mensaje. El enlace vence en 1 hora y sirve una sola vez.</p>
+    ```
+
+**Desde la app, botón Cuenta** (no usa correo):
 - **Cambiar mi contraseña:** pide la actual y la nueva (mínimo 8 caracteres).
-- **Restablecer contraseña de un compañero:** para quien la olvidó. Se elige a la persona, la app genera una contraseña temporal (por ejemplo `KMPT-4827-QXRA`) y se le dicta o se le envía por otro medio. Su contraseña anterior deja de servir y se cierran sus sesiones abiertas.
-- Quien entra con una contraseña temporal debe **crear una propia** antes de usar la app.
-- Cada restablecimiento y cada cambio de contraseña queda en el **Historial** (quién, a quién y cuándo).
+- **Restablecer contraseña de un compañero:** respaldo por si el correo no llega. Se elige a la persona, la app genera una contraseña temporal (por ejemplo `KMPT-4827-QXRA`) y se le dicta. Su contraseña anterior deja de servir y se cierran sus sesiones abiertas. Al entrar con la temporal, debe crear una propia.
+
+Todo queda en el **Historial**: quién restableció la contraseña de quién, quién cambió la suya y quién la recuperó por correo.
 
 Si nadie puede entrar (por ejemplo, todos olvidaron la contraseña), el administrador la cambia en **SQL Editor**:
 
@@ -82,7 +97,7 @@ where email = 'persona@correo.com';
 El botón **Historial** muestra, del más reciente al más antiguo, quién hizo qué y cuándo:
 
 - **Archivos:** agregó, editó (con lo que cambió, por ejemplo `Estante: 4 → 6`) y eliminó.
-- **Contraseñas:** restableció la contraseña de un compañero, o cambió la suya.
+- **Contraseñas:** restableció la contraseña de un compañero, cambió la suya o la recuperó por correo.
 - Se puede filtrar por *Todo*, *Archivos* o *Contraseñas*.
 
 El historial lo escribe la base de datos: desde la app **nadie lo puede editar ni borrar**. Los cambios hechos directamente desde el panel de Supabase aparecen como *Administrador (panel de Supabase)*.
