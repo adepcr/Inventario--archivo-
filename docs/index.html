@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Seguridad: solo se ejecuta código de esta misma página y solo se conecta a Supabase -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Inventario Archivo General</title>
+<meta name="description" content="Buscador del inventario del Archivo General: estante, nivel y bloque de cada archivo.">
+<meta name="theme-color" content="#1f5f4f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="iconos/icono-192.png" type="image/png">
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Archivo">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<!-- Pantalla de inicio de sesión -->
+<section class="login" id="loginView" hidden>
+  <form class="login-card" id="loginForm" novalidate>
+    <h1><small>Inventario detallado</small>Archivo General</h1>
+    <p class="hint">Ingrese con el correo y la contraseña que le dio el administrador.</p>
+    <div class="field"><label for="lCorreo">Correo</label><input id="lCorreo" type="email" autocomplete="username" required></div>
+    <div class="field"><label for="lClave">Contraseña</label><input id="lClave" type="password" autocomplete="current-password" required></div>
+    <p class="formerr" id="loginErr" hidden></p>
+    <button class="btn primary" type="submit" id="loginBtn">Ingresar</button>
+  </form>
+</section>
+
+<div id="appView" hidden>
+<header class="top">
+  <div class="wrap">
+    <div class="titlebar">
+      <h1><small>Inventario detallado</small>Archivo General</h1>
+      <div class="actions">
+        <span class="who" id="who"></span>
+        <button class="btn" id="logoutBtn" type="button">Salir</button>
+        <button class="btn primary" id="addBtn" type="button">+ Agregar archivo</button>
+      </div>
+    </div>
+    <div class="filters" role="search">
+      <div class="field"><label for="fArea">Categoría (área)</label><select id="fArea"><option value="">Todas</option></select></div>
+      <div class="field"><label for="fAnio">Año</label><select id="fAnio"><option value="">Todos</option></select></div>
+      <div class="field"><label for="fTipo">Tipo / contenido</label><input id="fTipo" list="dlTipo" placeholder="Ej. caja chica" autocomplete="off"></div>
+      <div class="field"><label for="fCont">Contenido específico</label><input id="fCont" placeholder="Ej. marzo, renuncias…" autocomplete="off"></div>
+      <button class="btn clear" id="clearBtn" type="button">Limpiar</button>
+    </div>
+    <div class="shelves" id="shelves"><span class="lbl">Estante</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="summary">
+      <p id="count">Cargando inventario…</p>
+      <span class="status" id="status" aria-live="polite"></span>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="more" id="moreWrap" hidden><button class="btn" id="moreBtn" type="button">Mostrar más</button></div>
+  </div>
+</main>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" hidden aria-labelledby="sheetTitle" role="dialog">
+  <header>
+    <h2 id="sheetTitle">Agregar archivo</h2>
+    <button class="btn small" id="closeSheet" type="button">Cerrar</button>
+  </header>
+  <form id="addForm" novalidate>
+    <p class="hint">Indique dónde quedará guardado y qué contiene.</p>
+    <div class="grid3">
+      <div class="field"><label for="aEstante">Estante *</label><input id="aEstante" list="dlEstante" inputmode="numeric" required></div>
+      <div class="field"><label for="aNivel">Nivel *</label><input id="aNivel" list="dlNivel" placeholder="2 FRONTAL" required></div>
+      <div class="field"><label for="aBloque">Bloque *</label><input id="aBloque" list="dlBloque" placeholder="A" required></div>
+    </div>
+    <div class="field"><label for="aAnio">Año</label><input id="aAnio" list="dlAnio" placeholder="2025, 2020-2022 o General"></div>
+    <div class="field"><label for="aTipo">Tipo / contenido *</label><input id="aTipo" list="dlTipo" required></div>
+    <div class="field"><label for="aCont">Contenido específico</label><input id="aCont" placeholder="Ej. Enero a abril"></div>
+    <div class="field"><label for="aArea">Área *</label><input id="aArea" list="dlArea" required></div>
+    <p class="formerr" id="formErr" hidden></p>
+    <div class="formfoot">
+      <button class="btn" type="button" id="cancelAdd">Cancelar</button>
+      <button class="btn primary" type="submit" id="submitBtn">Guardar archivo</button>
+    </div>
+  </form>
+</aside>
+
+<datalist id="dlTipo"></datalist><datalist id="dlArea"></datalist><datalist id="dlNivel"></datalist>
+<datalist id="dlBloque"></datalist><datalist id="dlEstante"></datalist><datalist id="dlAnio"></datalist>
+<div class="toast" id="toast" hidden></div>
+
+<script src="lib/supabase.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
