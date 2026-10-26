@@ -20,7 +20,7 @@
 </head>
 <body>
 
-<!-- Pantallas sin sesión: ingresar y crear contraseña propia (después de una temporal) -->
+<!-- Pantallas sin sesión: ingresar, olvidé mi contraseña y crear contraseña nueva -->
 <section class="login" id="loginView" hidden>
   <form class="login-card" id="loginForm" novalidate>
     <h1><small>Inventario detallado</small>Archivo General</h1>
@@ -29,8 +29,19 @@
     <div class="field"><label for="lClave">Contraseña</label><input id="lClave" type="password" autocomplete="current-password" required></div>
     <p class="formerr" id="loginErr" hidden></p>
     <button class="btn primary" type="submit" id="loginBtn">Ingresar</button>
-    <button class="linkbtn" type="button" id="olvidoLink" aria-controls="olvidoHint" aria-expanded="false">¿Olvidó su contraseña?</button>
-    <p class="hint" id="olvidoHint" hidden>Pídale a un compañero que entre a la app y use <b>Cuenta → Restablecer contraseña de un compañero</b>. Le dará una contraseña temporal; al entrar con ella, la app le pedirá crear una propia.</p>
+    <button class="linkbtn" type="button" id="olvidoLink">¿Olvidó su contraseña?</button>
+  </form>
+
+  <form class="login-card" id="olvidoForm" novalidate hidden>
+    <h1><small>Inventario detallado</small>Archivo General</h1>
+    <h2>Restablecer contraseña</h2>
+    <p class="hint">Escriba su correo. Le enviaremos un enlace para crear una contraseña nueva.</p>
+    <div class="field"><label for="oCorreo">Correo</label><input id="oCorreo" type="email" autocomplete="username" required></div>
+    <p class="formerr" id="olvidoErr" hidden></p>
+    <p class="formok" id="olvidoOk" hidden></p>
+    <button class="btn primary" type="submit" id="olvidoBtn">Enviar enlace</button>
+    <button class="linkbtn" type="button" id="volverLink">Volver a ingresar</button>
+    <p class="hint">¿No le llega el correo? Pídale a un compañero que entre a la app y use <b>Cuenta → Restablecer contraseña de un compañero</b>.</p>
   </form>
 
   <form class="login-card" id="nuevaForm" novalidate hidden>

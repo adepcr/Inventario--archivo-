@@ -24,7 +24,7 @@ create table if not exists public.archivos (
 
 -- Registro de cada cambio: quién, cuándo y qué pasó.
 -- Archivos:     agregado | modificado | eliminado   (antes / después del archivo)
--- Contraseñas:  clave_restablecida (despues = {"para": correo}) | clave_cambiada
+-- Contraseñas:  clave_restablecida (despues = {"para": correo}) | clave_cambiada | clave_recuperada (por correo)
 create table if not exists public.historial (
   id         bigint generated always as identity primary key,
   fecha      timestamptz not null default now(),
@@ -202,7 +202,9 @@ end;
 $$;
 
 -- La app la llama cuando alguien cambia su propia contraseña
-create or replace function public.anotar_cambio_clave()
+-- (p_por_correo = true si la cambió desde el enlace de "¿Olvidó su contraseña?")
+drop function if exists public.anotar_cambio_clave();
+create or replace function public.anotar_cambio_clave(p_por_correo boolean default false)
 returns void
 language plpgsql security definer set search_path = ''
 as $$
@@ -211,13 +213,14 @@ begin
     raise exception 'Debe iniciar sesión.';
   end if;
   insert into public.historial (accion, usuario, correo)
-  values ('clave_cambiada', auth.uid(), (select email from auth.users where id = auth.uid()));
+  values (case when p_por_correo then 'clave_recuperada' else 'clave_cambiada' end,
+          auth.uid(), (select email from auth.users where id = auth.uid()));
 end;
 $$;
 
 revoke execute on function public.listar_usuarios() from public, anon;
 revoke execute on function public.restablecer_clave(text, text) from public, anon;
-revoke execute on function public.anotar_cambio_clave() from public, anon;
+revoke execute on function public.anotar_cambio_clave(boolean) from public, anon;
 grant execute on function public.listar_usuarios() to authenticated;
 grant execute on function public.restablecer_clave(text, text) to authenticated;
-grant execute on function public.anotar_cambio_clave() to authenticated;
+grant execute on function public.anotar_cambio_clave(boolean) to authenticated;
