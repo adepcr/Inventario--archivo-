@@ -22,18 +22,22 @@ create table if not exists public.archivos (
   modificado_en timestamptz
 );
 
--- Registro de cada cambio: quién, cuándo y qué había antes / después
+-- Registro de cada cambio: quién, cuándo y qué pasó.
+-- Archivos:     agregado | modificado | eliminado   (antes / después del archivo)
+-- Contraseñas:  clave_restablecida (despues = {"para": correo}) | clave_cambiada
 create table if not exists public.historial (
   id         bigint generated always as identity primary key,
   fecha      timestamptz not null default now(),
-  accion     text not null,              -- agregado | modificado | eliminado
-  archivo_id bigint not null,
-  usuario    uuid,
-  correo     text,
+  accion     text not null,
+  archivo_id bigint,                     -- vacío en los eventos de contraseña
+  usuario    uuid,                       -- quién lo hizo
+  correo     text,                       -- correo de quién lo hizo
   antes      jsonb,
   despues    jsonb
 );
+alter table public.historial alter column archivo_id drop not null;
 create index if not exists historial_archivo_idx on public.historial (archivo_id);
+create index if not exists historial_fecha_idx on public.historial (fecha desc);
 
 -- ---------- Limpieza de la versión anterior con roles (si se había ejecutado) ----------
 
@@ -132,16 +136,18 @@ create policy "ver historial" on public.historial
 -- ---------- Contraseñas: restablecer la de un compañero ----------
 -- Si alguien olvida su contraseña, otra persona con sesión le asigna una temporal
 -- desde la app. Al entrar con ella, la app le pide crear una propia.
+-- Cada restablecimiento y cada cambio de contraseña queda en el historial.
 
--- Registro de cada restablecimiento (solo visible desde el panel de Supabase)
-create table if not exists public.claves_restablecidas (
-  id    bigint generated always as identity primary key,
-  fecha timestamptz not null default now(),
-  quien text,      -- correo de quien la restableció
-  para  text       -- correo de la persona a quien se le restableció
-);
-alter table public.claves_restablecidas enable row level security;
-revoke all on public.claves_restablecidas from anon, authenticated;
+-- Versión anterior: los restablecimientos se guardaban en otra tabla. Se pasan al historial.
+do $$
+begin
+  if to_regclass('public.claves_restablecidas') is not null then
+    insert into public.historial (fecha, accion, correo, despues)
+    select fecha, 'clave_restablecida', quien, jsonb_build_object('para', para)
+    from public.claves_restablecidas;
+    drop table public.claves_restablecidas;
+  end if;
+end $$;
 
 -- Lista de correos con cuenta (para elegir al compañero)
 create or replace function public.listar_usuarios()
@@ -187,12 +193,31 @@ begin
 
   delete from auth.sessions where user_id = destino;
 
-  insert into public.claves_restablecidas (quien, para)
-  values ((select email from auth.users where id = auth.uid()), correo_destino);
+  -- Queda en el historial quién lo hizo y a quién (no se puede saltar desde la app)
+  insert into public.historial (accion, usuario, correo, despues)
+  values ('clave_restablecida', auth.uid(),
+          (select email from auth.users where id = auth.uid()),
+          jsonb_build_object('para', correo_destino));
+end;
+$$;
+
+-- La app la llama cuando alguien cambia su propia contraseña
+create or replace function public.anotar_cambio_clave()
+returns void
+language plpgsql security definer set search_path = ''
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Debe iniciar sesión.';
+  end if;
+  insert into public.historial (accion, usuario, correo)
+  values ('clave_cambiada', auth.uid(), (select email from auth.users where id = auth.uid()));
 end;
 $$;
 
 revoke execute on function public.listar_usuarios() from public, anon;
 revoke execute on function public.restablecer_clave(text, text) from public, anon;
+revoke execute on function public.anotar_cambio_clave() from public, anon;
 grant execute on function public.listar_usuarios() to authenticated;
 grant execute on function public.restablecer_clave(text, text) to authenticated;
+grant execute on function public.anotar_cambio_clave() to authenticated;

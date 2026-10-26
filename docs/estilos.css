@@ -131,6 +131,25 @@ mark { background: var(--accent-soft); color: inherit; border-radius: 2px; paddi
 .linkbtn { background: none; border: 0; padding: 4px 0; color: var(--accent); font-weight: 600; font-size: .88rem; justify-self: center; text-decoration: underline; text-underline-offset: 3px; }
 .formok { color: var(--accent); font-size: .9rem; margin: 0; }
 
+/* Historial */
+.sheet.sheet-ancho { width: min(560px, 100%); }
+.hist-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
+.hist-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.hist-item { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; display: grid; gap: 4px; background: var(--surface); }
+.hist-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: .82rem; color: var(--muted); }
+.hist-cab time { font-variant-numeric: tabular-nums; }
+.hist-quien { color: var(--fg); font-weight: 600; overflow-wrap: anywhere; }
+.pill { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-radius: 999px; padding: 2px 8px; background: var(--sunk); color: var(--fg); }
+.pill.agregado { background: var(--accent-soft); color: var(--accent); }
+.pill.modificado { background: var(--tag); color: var(--tag-fg); }
+.pill.eliminado { background: var(--danger-soft); color: var(--danger); }
+.pill.clave { background: var(--fg); color: var(--bg); }
+.hist-que { margin: 0; overflow-wrap: anywhere; }
+.hist-que b { font-family: var(--font-display); letter-spacing: .01em; }
+.hist-cambios { margin: 2px 0 0; padding-left: 18px; font-size: .86rem; color: var(--muted); }
+.hist-cambios s { color: var(--muted); }
+.hist-cambios ins { text-decoration: none; color: var(--fg); font-weight: 600; }
+
 /* Cuenta */
 .sheet-body { padding: 16px 18px; display: grid; gap: 22px; overflow-y: auto; flex: 1; align-content: start; }
 .bloque-form { display: grid; gap: 12px; }

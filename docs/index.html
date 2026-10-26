@@ -52,6 +52,7 @@
       <h1><small>Inventario detallado</small>Archivo General</h1>
       <div class="actions">
         <span class="who" id="who"></span>
+        <button class="btn" id="histBtn" type="button">Historial</button>
         <button class="btn" id="cuentaBtn" type="button">Cuenta</button>
         <button class="btn" id="logoutBtn" type="button">Salir</button>
         <button class="btn primary" id="addBtn" type="button">+ Agregar archivo</button>
@@ -103,6 +104,24 @@
       <button class="btn primary" type="submit" id="submitBtn">Guardar archivo</button>
     </div>
   </form>
+</aside>
+
+<!-- Historial: quién hizo qué y cuándo (solo lectura) -->
+<aside class="sheet sheet-ancho" id="histSheet" hidden aria-labelledby="histTitle" role="dialog">
+  <header>
+    <h2 id="histTitle">Historial</h2>
+    <button class="btn small" id="closeHist" type="button">Cerrar</button>
+  </header>
+  <div class="sheet-body">
+    <div class="hist-filtros" id="histFiltros" role="group" aria-label="Mostrar">
+      <button class="shelf" type="button" data-f="todo" aria-pressed="true">Todo</button>
+      <button class="shelf" type="button" data-f="archivos" aria-pressed="false">Archivos</button>
+      <button class="shelf" type="button" data-f="claves" aria-pressed="false">Contraseñas</button>
+    </div>
+    <p class="hint" id="histEstado">Cargando…</p>
+    <ol class="hist-lista" id="histLista"></ol>
+    <div class="more" id="histMasWrap" hidden><button class="btn" id="histMas" type="button">Ver más</button></div>
+  </div>
 </aside>
 
 <!-- Cuenta: cambiar mi contraseña y restablecer la de un compañero -->

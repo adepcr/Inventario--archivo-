@@ -199,11 +199,12 @@ function openSheet(o, registro) {
 $("addBtn").addEventListener("click", () => openSheet(true));
 $("closeSheet").addEventListener("click", () => openSheet(false));
 $("cancelAdd").addEventListener("click", () => openSheet(false));
-$("scrim").addEventListener("click", () => { openSheet(false); abrirCuenta(false); });
+$("scrim").addEventListener("click", () => { openSheet(false); abrirCuenta(false); abrirHistorial(false); });
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   if (!$("sheet").hidden) openSheet(false);
   if (!$("cuentaSheet").hidden) abrirCuenta(false);
+  if (!$("histSheet").hidden) abrirHistorial(false);
 });
 
 $("addForm").addEventListener("submit", async e => {
@@ -284,6 +285,7 @@ $("nuevaForm").addEventListener("submit", async e => {
   $("nuevaBtn").disabled = false;
   if (error) { aviso("nuevaErr", mensajeError(error)); return; }
   $("nClave").value = $("nClave2").value = "";
+  sb.rpc("anotar_cambio_clave"); // queda en el historial
   await entrar(res.user);
   toast("Contraseña guardada");
 });
@@ -306,7 +308,7 @@ function salir() {
   usuarioActual = null; correoActual = ""; data = [];
   ["fArea", "fAnio", "fTipo", "fCont"].forEach(id => $(id).value = ""); shelfSel = ""; limit = PAGE; confirmId = freshId = null;
   $("list").innerHTML = ""; $("count").textContent = "Cargando inventario…"; setStatus("");
-  openSheet(false); abrirCuenta(false);
+  openSheet(false); abrirCuenta(false); abrirHistorial(false);
   mostrarTarjeta("loginForm");
   if (faltaConfig) aviso("loginErr", "Falta configurar la conexión: complete config.js con los datos de su proyecto de Supabase.");
 }
@@ -329,9 +331,12 @@ function claveTemporal() {
   return `${azar(letras, 4)}-${azar(numeros, 4)}-${azar(letras, 4)}`;
 }
 
+// El fondo oscuro se ve mientras haya algún panel abierto
+const ajustarScrim = () => { $("scrim").hidden = ["sheet", "cuentaSheet", "histSheet"].every(id => $(id).hidden); };
+
 async function abrirCuenta(abrir) {
   $("cuentaSheet").hidden = !abrir;
-  $("scrim").hidden = !abrir && $("sheet").hidden;
+  ajustarScrim();
   if (!abrir) return;
   ["miClaveErr", "miClaveOk", "compaErr", "compaConfirma", "compaOk"].forEach(id => $(id).hidden = true);
   ["mActual", "mNueva", "mNueva2"].forEach(id => $(id).value = "");
@@ -367,6 +372,7 @@ $("miClaveForm").addEventListener("submit", async e => {
   $("miClaveBtn").disabled = false;
   if (error) { aviso("miClaveErr", mensajeError(error)); return; }
   ["mActual", "mNueva", "mNueva2"].forEach(id => $(id).value = "");
+  sb.rpc("anotar_cambio_clave"); // queda en el historial
   aviso("miClaveOk", "Listo. Su contraseña se cambió.");
 });
 
@@ -398,6 +404,84 @@ $("compaSi").addEventListener("click", async () => {
 $("compaCopiar").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText($("compaClave").textContent); toast("Contraseña copiada"); }
   catch (e) { getSelection().selectAllChildren($("compaClave")); }
+});
+
+// ---------- Historial ----------
+// Lo escribe la base de datos; la app solo lo lee
+const HIST_PAGINA = 100;
+const ACCIONES = {
+  todo: null,
+  archivos: ["agregado", "modificado", "eliminado"],
+  claves: ["clave_restablecida", "clave_cambiada"]
+};
+const CAMPOS_HIST = { estante: "Estante", nivel: "Nivel", bloque: "Bloque", anio: "Año", tipo: "Tipo", contenido: "Contenido", area: "Área" };
+let histFiltro = "todo", histDesde = 0;
+
+const fechaHist = f => new Date(f).toLocaleString("es-CR", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
+const ubicHist = r => r ? `Estante ${esc(r.estante)} · Nivel ${esc(r.nivel)} · Bloque ${esc(r.bloque)}` : "";
+
+function itemHist(h) {
+  const quien = h.correo ? esc(h.correo) : "Administrador (panel de Supabase)";
+  const a = h.antes || {}, d = h.despues || {};
+  let pill, que, extra = "";
+  if (h.accion === "agregado") {
+    pill = ["agregado", "Agregó"];
+    que = `<b>${esc(d.tipo)}</b> — ${esc(d.anio)}, ${esc(d.contenido)}<br>${ubicHist(d)}`;
+  } else if (h.accion === "eliminado") {
+    pill = ["eliminado", "Eliminó"];
+    que = `<b>${esc(a.tipo)}</b> — ${esc(a.anio)}, ${esc(a.contenido)}<br>${ubicHist(a)}`;
+  } else if (h.accion === "modificado") {
+    pill = ["modificado", "Editó"];
+    que = `<b>${esc(d.tipo)}</b><br>${ubicHist(d)}`;
+    const cambios = Object.keys(CAMPOS_HIST).filter(k => a[k] !== d[k]);
+    if (cambios.length) extra = `<ul class="hist-cambios">${cambios.map(k => `<li>${CAMPOS_HIST[k]}: <s>${esc(a[k])}</s> → <ins>${esc(d[k])}</ins></li>`).join("")}</ul>`;
+  } else if (h.accion === "clave_restablecida") {
+    pill = ["clave", "Contraseña"];
+    que = `Restableció la contraseña de <b>${esc(d.para)}</b>`;
+  } else if (h.accion === "clave_cambiada") {
+    pill = ["clave", "Contraseña"];
+    que = "Cambió su propia contraseña";
+  } else {
+    pill = ["", esc(h.accion)]; que = "";
+  }
+  return `<li class="hist-item">
+    <div class="hist-cab"><span class="pill ${pill[0]}">${pill[1]}</span><span class="hist-quien">${quien}</span><time datetime="${esc(h.fecha)}">${fechaHist(h.fecha)}</time></div>
+    <p class="hist-que">${que}</p>${extra}
+  </li>`;
+}
+
+async function cargarHistorial(desde) {
+  histDesde = desde;
+  $("histMas").disabled = true;
+  let q = sb.from("historial").select("id, fecha, accion, correo, antes, despues").order("fecha", { ascending: false }).order("id", { ascending: false });
+  if (ACCIONES[histFiltro]) q = q.in("accion", ACCIONES[histFiltro]);
+  const { data: filas, error } = await q.range(desde, desde + HIST_PAGINA - 1);
+  $("histMas").disabled = false;
+  if (error) { $("histEstado").textContent = "No se pudo cargar el historial. " + mensajeError(error); $("histEstado").hidden = false; return; }
+  const html = filas.map(itemHist).join("");
+  if (desde === 0) $("histLista").innerHTML = html; else $("histLista").insertAdjacentHTML("beforeend", html);
+  const total = desde + filas.length;
+  $("histEstado").hidden = total > 0;
+  $("histEstado").textContent = "Todavía no hay movimientos registrados.";
+  $("histMasWrap").hidden = filas.length < HIST_PAGINA;
+}
+
+function abrirHistorial(abrir) {
+  $("histSheet").hidden = !abrir;
+  ajustarScrim();
+  if (!abrir) return;
+  $("histLista").innerHTML = ""; $("histEstado").textContent = "Cargando…"; $("histEstado").hidden = false; $("histMasWrap").hidden = true;
+  cargarHistorial(0);
+}
+$("histBtn").addEventListener("click", () => abrirHistorial(true));
+$("closeHist").addEventListener("click", () => abrirHistorial(false));
+$("histMas").addEventListener("click", () => cargarHistorial(histDesde + HIST_PAGINA));
+$("histFiltros").addEventListener("click", e => {
+  const b = e.target.closest("[data-f]"); if (!b) return;
+  histFiltro = b.dataset.f;
+  $("histFiltros").querySelectorAll("[data-f]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  $("histLista").innerHTML = ""; $("histEstado").textContent = "Cargando…"; $("histEstado").hidden = false; $("histMasWrap").hidden = true;
+  cargarHistorial(0);
 });
 
 const faltaConfig = /SU-PROYECTO|PEGUE-AQUI/.test(window.CONFIG.SUPABASE_URL + window.CONFIG.SUPABASE_KEY);
