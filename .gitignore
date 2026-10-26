@@ -1,0 +1,4 @@
+# Los datos del inventario no se suben: el repositorio es público
+supabase/2_datos.sql
+*.xlsx
+*.csv
