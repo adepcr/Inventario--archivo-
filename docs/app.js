@@ -537,7 +537,22 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-// App instalable: guarda la página para que abra rápido y funcione como app
+// App instalable: guarda la página para que abra rápido y funcione como app.
+// Cuando se publica una versión nueva, la página se recarga sola (si no hay un formulario abierto).
 if ("serviceWorker" in navigator && location.protocol === "https:") {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
+  const habiaVersion = !!navigator.serviceWorker.controller;
+  let recargando = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!habiaVersion || recargando) return;
+    const ocupado = !$("sheet").hidden || !$("cuentaSheet").hidden || !$("nuevaForm").hidden;
+    if (ocupado) { toast("Hay una versión nueva de la app. Recargue la página cuando termine."); return; }
+    recargando = true;
+    location.reload();
+  });
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+    .then(reg => {
+      // Revisa si hay versión nueva al volver a la app
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+    })
+    .catch(() => {});
 }
