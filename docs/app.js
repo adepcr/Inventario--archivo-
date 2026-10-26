@@ -113,12 +113,6 @@ function setStatus(msg, err) { const s = $("status"); s.textContent = msg; s.cla
 
 // ---------- Conexión con Supabase ----------
 const COLUMNAS = "id, estante, nivel, bloque, anio, tipo, contenido, area";
-// Se revisa ANTES de crear el cliente: al abrir el enlace del correo de "olvidé mi contraseña"
-// la dirección trae type=recovery (o un error si el enlace venció)
-const enlaceRecuperacion = /type=recovery/.test(location.hash + location.search);
-let errorEnlace = /error_code=|error_description=/.test(location.hash + location.search);
-let modoRecuperacion = enlaceRecuperacion;
-
 const sb = window.supabase.createClient(window.CONFIG.SUPABASE_URL, window.CONFIG.SUPABASE_KEY);
 
 // Traduce los errores de Supabase a mensajes claros
@@ -128,7 +122,7 @@ function mensajeError(error) {
   if (/Invalid login credentials/i.test(m)) return "Correo o contraseña incorrectos.";
   if (/Email not confirmed/i.test(m)) return "El correo aún no está confirmado. Pida ayuda al administrador.";
   if (/Failed to fetch|NetworkError|network/i.test(m)) return "No hay conexión a internet. Revise la conexión e intente de nuevo.";
-  if (/rate limit|only request this after|too many/i.test(m)) return "Se pidieron demasiados correos seguidos. Espere unos minutos e intente de nuevo.";
+  if (/rate limit|too many/i.test(m)) return "Demasiados intentos seguidos. Espere unos minutos e intente de nuevo.";
   if (/should be different from the old/i.test(m)) return "La contraseña nueva debe ser distinta a la anterior.";
   if (/Password should be at least|weak.?password/i.test(m)) return "La contraseña es muy débil. Use al menos 8 caracteres, mezclando letras y números.";
   if (/JWT|session|refresh token/i.test(m)) return "La sesión venció. Vuelva a ingresar.";
@@ -205,8 +199,12 @@ function openSheet(o, registro) {
 $("addBtn").addEventListener("click", () => openSheet(true));
 $("closeSheet").addEventListener("click", () => openSheet(false));
 $("cancelAdd").addEventListener("click", () => openSheet(false));
-$("scrim").addEventListener("click", () => openSheet(false));
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("sheet").hidden) openSheet(false); });
+$("scrim").addEventListener("click", () => { openSheet(false); abrirCuenta(false); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (!$("sheet").hidden) openSheet(false);
+  if (!$("cuentaSheet").hidden) abrirCuenta(false);
+});
 
 $("addForm").addEventListener("submit", async e => {
   e.preventDefault();
@@ -244,83 +242,71 @@ function mostrarVista(conSesion) {
   $("appView").hidden = !conSesion;
 }
 
-// Muestra una de las tarjetas sin sesión: "loginForm", "olvidoForm" o "nuevaForm"
+// Muestra una de las tarjetas sin sesión: "loginForm" o "nuevaForm"
 function mostrarTarjeta(id) {
-  ["loginForm", "olvidoForm", "nuevaForm"].forEach(t => $(t).hidden = t !== id);
-  ["loginErr", "loginOk", "olvidoErr", "olvidoOk", "nuevaErr"].forEach(t => $(t).hidden = true);
+  ["loginForm", "nuevaForm"].forEach(t => $(t).hidden = t !== id);
+  ["loginErr", "nuevaErr"].forEach(t => $(t).hidden = true);
   mostrarVista(false);
-  const foco = { loginForm: "lCorreo", olvidoForm: "oCorreo", nuevaForm: "nClave" }[id];
-  setTimeout(() => $(foco).focus(), 30);
+  setTimeout(() => $(id === "loginForm" ? "lCorreo" : "nClave").focus(), 30);
 }
 const aviso = (id, texto) => { $(id).textContent = texto; $(id).hidden = false; };
-const limpiarDireccion = () => history.replaceState(null, "", location.pathname);
+const validarClave = (clave, clave2) =>
+  clave.length < 8 ? "La contraseña debe tener al menos 8 caracteres." :
+  clave !== clave2 ? "Las dos contraseñas no coinciden." : "";
 
 $("olvidoLink").addEventListener("click", () => {
-  $("oCorreo").value = $("lCorreo").value.trim();
-  mostrarTarjeta("olvidoForm");
-});
-$("volverLink").addEventListener("click", () => mostrarTarjeta("loginForm"));
-
-$("olvidoForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const correo = $("oCorreo").value.trim();
-  $("olvidoErr").hidden = true; $("olvidoOk").hidden = true;
-  if (!/^\S+@\S+\.\S+$/.test(correo)) { aviso("olvidoErr", "Escriba un correo válido."); return; }
-  $("olvidoBtn").disabled = true;
-  // El enlace del correo vuelve a esta misma página
-  const { error } = await sb.auth.resetPasswordForEmail(correo, { redirectTo: location.origin + location.pathname });
-  $("olvidoBtn").disabled = false;
-  if (error) { aviso("olvidoErr", mensajeError(error)); return; }
-  // Mismo mensaje exista o no el correo, para no revelar quién tiene cuenta
-  aviso("olvidoOk", "Si ese correo tiene cuenta, le llegará un enlace en unos minutos. Revise también la carpeta de spam.");
-});
-
-$("nuevaForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const clave = $("nClave").value, clave2 = $("nClave2").value;
-  $("nuevaErr").hidden = true;
-  if (clave.length < 8) { aviso("nuevaErr", "La contraseña debe tener al menos 8 caracteres."); return; }
-  if (clave !== clave2) { aviso("nuevaErr", "Las dos contraseñas no coinciden."); return; }
-  $("nuevaBtn").disabled = true;
-  const { data: res, error } = await sb.auth.updateUser({ password: clave });
-  $("nuevaBtn").disabled = false;
-  if (error) { aviso("nuevaErr", mensajeError(error)); return; }
-  $("nClave").value = $("nClave2").value = "";
-  modoRecuperacion = false;
-  limpiarDireccion();
-  await entrar(res.user);
-  toast("Contraseña actualizada");
+  const ver = $("olvidoHint").hidden;
+  $("olvidoHint").hidden = !ver;
+  $("olvidoLink").setAttribute("aria-expanded", String(ver));
 });
 
 $("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   const correo = $("lCorreo").value.trim(), clave = $("lClave").value;
-  if (!correo || !clave) { $("loginErr").textContent = "Escriba su correo y contraseña."; $("loginErr").hidden = false; return; }
+  if (!correo || !clave) { aviso("loginErr", "Escriba su correo y contraseña."); return; }
   $("loginBtn").disabled = true; $("loginErr").hidden = true;
   const { error } = await sb.auth.signInWithPassword({ email: correo, password: clave });
   $("loginBtn").disabled = false;
-  if (error) { $("loginErr").textContent = mensajeError(error); $("loginErr").hidden = false; return; }
+  if (error) { aviso("loginErr", mensajeError(error)); return; }
   $("lClave").value = "";
 });
 
-$("logoutBtn").addEventListener("click", async () => {
-  await sb.auth.signOut();
+$("logoutBtn").addEventListener("click", () => sb.auth.signOut());
+$("nuevaSalir").addEventListener("click", () => sb.auth.signOut());
+
+// Entró con una contraseña temporal: debe crear una propia antes de usar la app
+$("nuevaForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const problema = validarClave($("nClave").value, $("nClave2").value);
+  if (problema) { aviso("nuevaErr", problema); return; }
+  $("nuevaBtn").disabled = true; $("nuevaErr").hidden = true;
+  const { data: res, error } = await sb.auth.updateUser({ password: $("nClave").value, data: { debe_cambiar_clave: false } });
+  $("nuevaBtn").disabled = false;
+  if (error) { aviso("nuevaErr", mensajeError(error)); return; }
+  $("nClave").value = $("nClave2").value = "";
+  await entrar(res.user);
+  toast("Contraseña guardada");
 });
 
-let usuarioActual = null;
+let usuarioActual = null, correoActual = "";
 async function entrar(user) {
+  if (user.user_metadata && user.user_metadata.debe_cambiar_clave) {
+    usuarioActual = null;
+    mostrarTarjeta("nuevaForm");
+    return;
+  }
   if (usuarioActual === user.id) return;
-  usuarioActual = user.id;
+  usuarioActual = user.id; correoActual = user.email;
   mostrarVista(true);
   $("who").textContent = user.email;
   await recargar();
 }
 
 function salir() {
-  usuarioActual = null; data = [];
+  usuarioActual = null; correoActual = ""; data = [];
   ["fArea", "fAnio", "fTipo", "fCont"].forEach(id => $(id).value = ""); shelfSel = ""; limit = PAGE; confirmId = freshId = null;
   $("list").innerHTML = ""; $("count").textContent = "Cargando inventario…"; setStatus("");
-  openSheet(false);
+  openSheet(false); abrirCuenta(false);
   mostrarTarjeta("loginForm");
   if (faltaConfig) aviso("loginErr", "Falta configurar la conexión: complete config.js con los datos de su proyecto de Supabase.");
 }
@@ -335,28 +321,90 @@ async function recargar() {
   }
 }
 
+// ---------- Cuenta: contraseñas ----------
+// Contraseña temporal fácil de dictar: sin letras que se confunden (0/O, 1/l/I)
+function claveTemporal() {
+  const letras = "ABCDEFGHJKMNPQRSTUVWXYZ", numeros = "23456789";
+  const azar = (txt, n) => Array.from(crypto.getRandomValues(new Uint32Array(n)), x => txt[x % txt.length]).join("");
+  return `${azar(letras, 4)}-${azar(numeros, 4)}-${azar(letras, 4)}`;
+}
+
+async function abrirCuenta(abrir) {
+  $("cuentaSheet").hidden = !abrir;
+  $("scrim").hidden = !abrir && $("sheet").hidden;
+  if (!abrir) return;
+  ["miClaveErr", "miClaveOk", "compaErr", "compaConfirma", "compaOk"].forEach(id => $(id).hidden = true);
+  ["mActual", "mNueva", "mNueva2"].forEach(id => $(id).value = "");
+  $("compaPie").hidden = false;
+  $("miCorreo").textContent = "Usuario: " + correoActual;
+  $("rClave").value = claveTemporal();
+  setTimeout(() => $("mActual").focus(), 30);
+  const { data: lista, error } = await sb.rpc("listar_usuarios");
+  if (error) { $("rUsuario").innerHTML = '<option value="">No se pudo cargar la lista</option>'; aviso("compaErr", mensajeError(error)); return; }
+  const otros = lista.map(u => u.correo).filter(c => c !== correoActual);
+  $("rUsuario").innerHTML = otros.length
+    ? '<option value="">Elija a la persona…</option>' + otros.map(c => `<option>${esc(c)}</option>`).join("")
+    : '<option value="">No hay otros usuarios</option>';
+}
+$("cuentaBtn").addEventListener("click", () => abrirCuenta(true));
+$("closeCuenta").addEventListener("click", () => abrirCuenta(false));
+
+$("miClaveForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("miClaveErr").hidden = true; $("miClaveOk").hidden = true;
+  if (!$("mActual").value) { aviso("miClaveErr", "Escriba su contraseña actual."); return; }
+  const problema = validarClave($("mNueva").value, $("mNueva2").value);
+  if (problema) { aviso("miClaveErr", problema); return; }
+  $("miClaveBtn").disabled = true;
+  // Confirma la contraseña actual antes de cambiarla
+  const { error: errActual } = await sb.auth.signInWithPassword({ email: correoActual, password: $("mActual").value });
+  if (errActual) {
+    $("miClaveBtn").disabled = false;
+    aviso("miClaveErr", /Invalid login credentials/i.test(errActual.message) ? "La contraseña actual no es correcta." : mensajeError(errActual));
+    return;
+  }
+  const { error } = await sb.auth.updateUser({ password: $("mNueva").value });
+  $("miClaveBtn").disabled = false;
+  if (error) { aviso("miClaveErr", mensajeError(error)); return; }
+  ["mActual", "mNueva", "mNueva2"].forEach(id => $(id).value = "");
+  aviso("miClaveOk", "Listo. Su contraseña se cambió.");
+});
+
+$("rGenerar").addEventListener("click", () => { $("rClave").value = claveTemporal(); });
+
+// Primero pide confirmar; el cambio se hace con "Sí, restablecer"
+$("compaForm").addEventListener("submit", e => {
+  e.preventDefault();
+  $("compaErr").hidden = true; $("compaOk").hidden = true;
+  const correo = $("rUsuario").value, clave = $("rClave").value.trim();
+  if (!correo) { aviso("compaErr", "Elija a la persona."); return; }
+  if (clave.length < 8) { aviso("compaErr", "La contraseña temporal debe tener al menos 8 caracteres."); return; }
+  $("compaPregunta").textContent = `¿Restablecer la contraseña de ${correo}? Su contraseña actual dejará de funcionar y se cerrarán sus sesiones abiertas.`;
+  $("compaConfirma").hidden = false; $("compaPie").hidden = true;
+});
+$("compaNo").addEventListener("click", () => { $("compaConfirma").hidden = true; $("compaPie").hidden = false; });
+$("compaSi").addEventListener("click", async () => {
+  const correo = $("rUsuario").value, clave = $("rClave").value.trim();
+  $("compaSi").disabled = true;
+  const { error } = await sb.rpc("restablecer_clave", { p_correo: correo, p_clave: clave });
+  $("compaSi").disabled = false;
+  $("compaConfirma").hidden = true; $("compaPie").hidden = false;
+  if (error) { aviso("compaErr", mensajeError(error)); return; }
+  $("compaOkTexto").textContent = `Listo. Dele esta contraseña temporal a ${correo}. Al entrar, la app le pedirá crear una propia.`;
+  $("compaClave").textContent = clave;
+  $("compaOk").hidden = false;
+  $("rClave").value = claveTemporal();
+});
+$("compaCopiar").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("compaClave").textContent); toast("Contraseña copiada"); }
+  catch (e) { getSelection().selectAllChildren($("compaClave")); }
+});
+
 const faltaConfig = /SU-PROYECTO|PEGUE-AQUI/.test(window.CONFIG.SUPABASE_URL + window.CONFIG.SUPABASE_KEY);
 
 sb.auth.onAuthStateChange((evento, sesion) => {
-  if (evento === "PASSWORD_RECOVERY") modoRecuperacion = true;
   // Se difiere para no llamar a Supabase dentro del aviso de cambio de sesión
-  setTimeout(() => {
-    if (modoRecuperacion && sesion && sesion.user) {
-      // Llegó desde el enlace del correo: primero debe crear la contraseña nueva
-      usuarioActual = null;
-      $("nuevaHint").textContent = `Escriba la nueva contraseña para ${sesion.user.email}. Debe tener al menos 8 caracteres.`;
-      mostrarTarjeta("nuevaForm");
-    } else if (sesion && sesion.user) {
-      entrar(sesion.user);
-    } else {
-      salir();
-      if (errorEnlace) {
-        errorEnlace = false;
-        limpiarDireccion();
-        aviso("loginErr", "El enlace para restablecer la contraseña venció o ya se usó. Pida uno nuevo con «¿Olvidó su contraseña?».");
-      }
-    }
-  }, 0);
+  setTimeout(() => { sesion && sesion.user ? entrar(sesion.user) : salir(); }, 0);
 });
 
 // Al volver a la app (otra pestaña, celular desbloqueado) trae los cambios que hicieron otras personas

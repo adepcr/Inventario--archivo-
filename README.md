@@ -59,40 +59,23 @@ El archivo con los datos iniciales (`2_datos.sql`, 1310 archivos del Excel origi
 
 Cada vez que se cambie algo en `docs/` y se haga commit, GitHub Pages publica la versión nueva sola. Si cambia archivos de la app, suba también el número de `VERSION` en `docs/sw.js` para que los celulares tomen la versión nueva.
 
-### 4. Restablecer contraseña ("¿Olvidó su contraseña?")
+### 4. Contraseñas
 
-En la pantalla de ingreso hay un enlace **¿Olvidó su contraseña?**. La persona escribe su correo, recibe un enlace y crea una contraseña nueva en la app. Para que funcione:
+No se usa correo para recuperar contraseñas. Todo se hace desde la app, con el botón **Cuenta**:
 
-**a) Permitir que el enlace vuelva a la app**
-Supabase → **Authentication → URL Configuration → Redirect URLs → Add URL**:
-`https://12027-0289.github.io/Inventario--archivo-/**`
+- **Cambiar mi contraseña:** pide la actual y la nueva (mínimo 8 caracteres).
+- **Restablecer contraseña de un compañero:** para quien la olvidó. Se elige a la persona, la app genera una contraseña temporal (por ejemplo `KMPT-4827-QXRA`) y se le dicta o se le envía por otro medio. Su contraseña anterior deja de servir y se cierran sus sesiones abiertas.
+- Quien entra con una contraseña temporal debe **crear una propia** antes de usar la app.
+- Cada restablecimiento queda anotado en la tabla `claves_restablecidas` (quién, a quién y cuándo), visible solo desde el panel de Supabase.
 
-**b) Configurar un correo que envíe los mensajes (obligatorio)**
-El correo que trae Supabase gratis **solo envía a los miembros del equipo del proyecto** y muy pocos por hora, así que a los usuarios normales no les llegaría. Se conecta un Gmail:
+Si nadie puede entrar (por ejemplo, todos olvidaron la contraseña), el administrador la cambia en **SQL Editor**:
 
-1. Use un Gmail (de preferencia uno de la oficina, por ejemplo `archivo.general@gmail.com`).
-2. En esa cuenta active la **verificación en dos pasos**: https://myaccount.google.com/security
-3. Cree una **contraseña de aplicación**: https://myaccount.google.com/apppasswords (nombre: `Supabase`). Google muestra 16 letras; cópielas.
-4. Supabase → **Authentication → Emails → SMTP Settings** → active **Enable custom SMTP**:
-   - **Sender email:** el Gmail · **Sender name:** `Archivo General`
-   - **Host:** `smtp.gmail.com` · **Port:** `465`
-   - **Username:** el Gmail · **Password:** las 16 letras (sin espacios)
-   - **Save changes**
-5. En **Authentication → Rate Limits**, puede subir *emails sent per hour* (por ejemplo a 30).
-
-**c) Correo en español (opcional)**
-Supabase → **Authentication → Emails → Templates → Reset Password**:
-
-- **Subject:** `Restablecer contraseña - Inventario Archivo General`
-- **Body:**
-  ```html
-  <h2>Restablecer contraseña</h2>
-  <p>Se pidió cambiar la contraseña del Inventario del Archivo General para este correo.</p>
-  <p><a href="{{ .ConfirmationURL }}">Crear contraseña nueva</a></p>
-  <p>Si usted no lo pidió, ignore este mensaje. El enlace vence en 1 hora y sirve una sola vez.</p>
-  ```
-
-Si el enlace venció o ya se usó, la app lo indica y la persona puede pedir otro.
+```sql
+update auth.users
+set encrypted_password = extensions.crypt('Temporal-2026', extensions.gen_salt('bf')),
+    raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || '{"debe_cambiar_clave": true}'::jsonb
+where email = 'persona@correo.com';
+```
 
 ## Instalar como app
 

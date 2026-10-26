@@ -128,3 +128,71 @@ create policy "modificar archivos" on public.archivos
 drop policy if exists "ver historial" on public.historial;
 create policy "ver historial" on public.historial
   for select to authenticated using (true);
+
+-- ---------- Contraseñas: restablecer la de un compañero ----------
+-- Si alguien olvida su contraseña, otra persona con sesión le asigna una temporal
+-- desde la app. Al entrar con ella, la app le pide crear una propia.
+
+-- Registro de cada restablecimiento (solo visible desde el panel de Supabase)
+create table if not exists public.claves_restablecidas (
+  id    bigint generated always as identity primary key,
+  fecha timestamptz not null default now(),
+  quien text,      -- correo de quien la restableció
+  para  text       -- correo de la persona a quien se le restableció
+);
+alter table public.claves_restablecidas enable row level security;
+revoke all on public.claves_restablecidas from anon, authenticated;
+
+-- Lista de correos con cuenta (para elegir al compañero)
+create or replace function public.listar_usuarios()
+returns table (correo text)
+language sql stable security definer set search_path = ''
+as $$
+  select u.email::text
+  from auth.users u
+  where auth.uid() is not null and u.email is not null
+  order by u.email;
+$$;
+
+-- Asigna una contraseña temporal a otra persona y cierra sus sesiones abiertas
+create or replace function public.restablecer_clave(p_correo text, p_clave text)
+returns void
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  destino uuid;
+  correo_destino text;
+begin
+  if auth.uid() is null then
+    raise exception 'Debe iniciar sesión.';
+  end if;
+  if length(coalesce(p_clave, '')) < 8 then
+    raise exception 'La contraseña temporal debe tener al menos 8 caracteres.';
+  end if;
+
+  select id, email into destino, correo_destino
+  from auth.users where lower(email) = lower(btrim(p_correo));
+  if destino is null then
+    raise exception 'No hay ningún usuario con ese correo.';
+  end if;
+  if destino = auth.uid() then
+    raise exception 'Para su propia contraseña use «Cambiar mi contraseña».';
+  end if;
+
+  update auth.users
+  set encrypted_password = extensions.crypt(p_clave, extensions.gen_salt('bf')),
+      raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || '{"debe_cambiar_clave": true}'::jsonb,
+      updated_at = now()
+  where id = destino;
+
+  delete from auth.sessions where user_id = destino;
+
+  insert into public.claves_restablecidas (quien, para)
+  values ((select email from auth.users where id = auth.uid()), correo_destino);
+end;
+$$;
+
+revoke execute on function public.listar_usuarios() from public, anon;
+revoke execute on function public.restablecer_clave(text, text) from public, anon;
+grant execute on function public.listar_usuarios() to authenticated;
+grant execute on function public.restablecer_clave(text, text) to authenticated;
