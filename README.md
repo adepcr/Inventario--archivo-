@@ -2,7 +2,8 @@
 
 Aplicación web para buscar los archivos del Archivo General por categoría (área), año, tipo y contenido específico, y ver en qué **estante, nivel y bloque** están. También permite **agregar, editar y eliminar** archivos.
 
-- **App:** https://12027-0289.github.io/Inventario--archivo-/ (una vez activado GitHub Pages)
+- **App:** https://adepcr.github.io/Inventario--archivo-/
+- **Repositorio oficial:** https://github.com/adepcr/Inventario--archivo- (organización de ADEP en GitHub)
 - **Datos:** [Supabase](https://supabase.com) (base de datos PostgreSQL en la nube, plan gratis)
 - **Página:** GitHub Pages, carpeta [`docs/`](docs)
 - Se puede **instalar como app** en celular y computadora.
@@ -45,7 +46,7 @@ El archivo con los datos iniciales (`2_datos.sql`, 1310 archivos del Excel origi
 3. **SQL Editor → New query**: pegue todo `2_datos.sql` y presione **Run**. Debe mostrar `archivos_cargados = 1310`.
 4. **Authentication → Sign In / Providers**: desactive **Allow new users to sign up**.
 5. **Authentication → Users → Add user → Create new user**: cree el usuario de cada persona (marque *Auto Confirm User*).
-6. **Authentication → URL Configuration → Site URL**: `https://12027-0289.github.io/Inventario--archivo-/`
+6. **Authentication → URL Configuration → Site URL**: `https://adepcr.github.io/Inventario--archivo-/`
 
 ### 2. Conectar la app
 
@@ -56,7 +57,7 @@ El archivo con los datos iniciales (`2_datos.sql`, 1310 archivos del Excel origi
 
 1. En este repositorio: **Settings → Pages**.
 2. *Source*: **Deploy from a branch**. *Branch*: **main** y carpeta **/docs**. **Save**.
-3. En uno o dos minutos la app queda en https://12027-0289.github.io/Inventario--archivo-/
+3. En uno o dos minutos la app queda en https://adepcr.github.io/Inventario--archivo-/
 
 Cada vez que se cambie algo en `docs/` y se haga commit, GitHub Pages publica la versión nueva sola. Si cambia archivos de la app, suba también el número de `VERSION` en `docs/sw.js` para que los celulares tomen la versión nueva.
 
@@ -67,7 +68,7 @@ En la pantalla de ingreso, la persona escribe su correo y recibe un enlace. Al a
 
 Configuración en Supabase (ya hecha):
 - **Authentication → Emails → SMTP Settings** (*Enable custom SMTP*): remitente `encuesta@adepcr.org`, host `smtp.office365.com`, puerto `587`, usuario `encuesta@adepcr.org` y la contraseña de ese correo. Si se cambia la contraseña de ese correo, hay que actualizarla aquí o dejarán de llegar los mensajes.
-- **Authentication → URL Configuration → Redirect URLs**: `https://12027-0289.github.io/Inventario--archivo-/**`
+- **Authentication → URL Configuration → Redirect URLs**: `https://adepcr.github.io/Inventario--archivo-/**`
 - Opcional, correo en español: **Authentication → Emails → Templates → Reset Password**
   - Asunto: `Restablecer contraseña - Inventario Archivo General`
   - Mensaje:
