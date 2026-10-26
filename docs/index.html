@@ -20,7 +20,7 @@
 </head>
 <body>
 
-<!-- Pantallas sin sesión: ingresar, olvidé mi contraseña y crear contraseña nueva -->
+<!-- Pantallas sin sesión: ingresar y crear contraseña propia (después de una temporal) -->
 <section class="login" id="loginView" hidden>
   <form class="login-card" id="loginForm" novalidate>
     <h1><small>Inventario detallado</small>Archivo General</h1>
@@ -28,30 +28,20 @@
     <div class="field"><label for="lCorreo">Correo</label><input id="lCorreo" type="email" autocomplete="username" required></div>
     <div class="field"><label for="lClave">Contraseña</label><input id="lClave" type="password" autocomplete="current-password" required></div>
     <p class="formerr" id="loginErr" hidden></p>
-    <p class="formok" id="loginOk" hidden></p>
     <button class="btn primary" type="submit" id="loginBtn">Ingresar</button>
-    <button class="linkbtn" type="button" id="olvidoLink">¿Olvidó su contraseña?</button>
-  </form>
-
-  <form class="login-card" id="olvidoForm" novalidate hidden>
-    <h1><small>Inventario detallado</small>Archivo General</h1>
-    <h2>Restablecer contraseña</h2>
-    <p class="hint">Escriba su correo. Le enviaremos un enlace para crear una contraseña nueva.</p>
-    <div class="field"><label for="oCorreo">Correo</label><input id="oCorreo" type="email" autocomplete="username" required></div>
-    <p class="formerr" id="olvidoErr" hidden></p>
-    <p class="formok" id="olvidoOk" hidden></p>
-    <button class="btn primary" type="submit" id="olvidoBtn">Enviar enlace</button>
-    <button class="linkbtn" type="button" id="volverLink">Volver a ingresar</button>
+    <button class="linkbtn" type="button" id="olvidoLink" aria-controls="olvidoHint" aria-expanded="false">¿Olvidó su contraseña?</button>
+    <p class="hint" id="olvidoHint" hidden>Pídale a un compañero que entre a la app y use <b>Cuenta → Restablecer contraseña de un compañero</b>. Le dará una contraseña temporal; al entrar con ella, la app le pedirá crear una propia.</p>
   </form>
 
   <form class="login-card" id="nuevaForm" novalidate hidden>
     <h1><small>Inventario detallado</small>Archivo General</h1>
-    <h2>Contraseña nueva</h2>
-    <p class="hint" id="nuevaHint">Escriba su nueva contraseña. Debe tener al menos 8 caracteres.</p>
+    <h2>Cree su contraseña</h2>
+    <p class="hint" id="nuevaHint">Entró con una contraseña temporal. Cree una propia de al menos 8 caracteres para continuar.</p>
     <div class="field"><label for="nClave">Contraseña nueva</label><input id="nClave" type="password" autocomplete="new-password" required></div>
     <div class="field"><label for="nClave2">Repita la contraseña</label><input id="nClave2" type="password" autocomplete="new-password" required></div>
     <p class="formerr" id="nuevaErr" hidden></p>
     <button class="btn primary" type="submit" id="nuevaBtn">Guardar contraseña</button>
+    <button class="linkbtn" type="button" id="nuevaSalir">Salir</button>
   </form>
 </section>
 
@@ -62,6 +52,7 @@
       <h1><small>Inventario detallado</small>Archivo General</h1>
       <div class="actions">
         <span class="who" id="who"></span>
+        <button class="btn" id="cuentaBtn" type="button">Cuenta</button>
         <button class="btn" id="logoutBtn" type="button">Salir</button>
         <button class="btn primary" id="addBtn" type="button">+ Agregar archivo</button>
       </div>
@@ -112,6 +103,45 @@
       <button class="btn primary" type="submit" id="submitBtn">Guardar archivo</button>
     </div>
   </form>
+</aside>
+
+<!-- Cuenta: cambiar mi contraseña y restablecer la de un compañero -->
+<aside class="sheet" id="cuentaSheet" hidden aria-labelledby="cuentaTitle" role="dialog">
+  <header>
+    <h2 id="cuentaTitle">Cuenta</h2>
+    <button class="btn small" id="closeCuenta" type="button">Cerrar</button>
+  </header>
+  <div class="sheet-body">
+    <form id="miClaveForm" class="bloque-form" novalidate>
+      <h3>Cambiar mi contraseña</h3>
+      <p class="hint" id="miCorreo"></p>
+      <div class="field"><label for="mActual">Contraseña actual</label><input id="mActual" type="password" autocomplete="current-password"></div>
+      <div class="field"><label for="mNueva">Contraseña nueva</label><input id="mNueva" type="password" autocomplete="new-password"></div>
+      <div class="field"><label for="mNueva2">Repita la contraseña nueva</label><input id="mNueva2" type="password" autocomplete="new-password"></div>
+      <p class="formerr" id="miClaveErr" hidden></p>
+      <p class="formok" id="miClaveOk" hidden></p>
+      <div class="formfoot"><button class="btn primary" type="submit" id="miClaveBtn">Cambiar contraseña</button></div>
+    </form>
+
+    <form id="compaForm" class="bloque-form" novalidate>
+      <h3>Restablecer contraseña de un compañero</h3>
+      <p class="hint">Para quien olvidó su contraseña. Se le asigna una temporal; al entrar con ella tendrá que crear una propia. Sus sesiones abiertas se cierran.</p>
+      <div class="field"><label for="rUsuario">Compañero</label><select id="rUsuario"><option value="">Cargando…</option></select></div>
+      <div class="field"><label for="rClave">Contraseña temporal</label>
+        <div class="fila-clave"><input id="rClave" autocomplete="off" spellcheck="false"><button class="btn" type="button" id="rGenerar">Generar otra</button></div>
+      </div>
+      <p class="formerr" id="compaErr" hidden></p>
+      <div class="confirma" id="compaConfirma" hidden>
+        <p id="compaPregunta"></p>
+        <div class="formfoot"><button class="btn" type="button" id="compaNo">Cancelar</button><button class="btn danger" type="button" id="compaSi">Sí, restablecer</button></div>
+      </div>
+      <div class="resultado" id="compaOk" hidden>
+        <p id="compaOkTexto"></p>
+        <p class="clave-temporal"><code id="compaClave"></code><button class="btn small" type="button" id="compaCopiar">Copiar</button></p>
+      </div>
+      <div class="formfoot" id="compaPie"><button class="btn primary" type="submit" id="compaBtn">Restablecer contraseña</button></div>
+    </form>
+  </div>
 </aside>
 
 <datalist id="dlTipo"></datalist><datalist id="dlArea"></datalist><datalist id="dlNivel"></datalist>
