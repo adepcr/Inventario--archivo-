@@ -37,6 +37,13 @@ supabase/
 
 El archivo con los datos iniciales (`2_datos.sql`, 1310 archivos del Excel original) se entrega aparte y se ejecuta una sola vez en Supabase.
 
+## Propiedad y licencias
+
+- El código de esta aplicación fue desarrollado para la **Asociación de Educadores Pensionados (ADEP)** y le pertenece. Que el repositorio sea público permite verlo, pero no da permiso para usarlo o copiarlo en otros proyectos.
+- El logo de ADEP (`docs/iconos/logo-adep.png`) es de la institución.
+- `docs/lib/supabase.js` es la librería oficial de Supabase, con licencia MIT: ver [`docs/lib/LICENSE-supabase-js.txt`](docs/lib/LICENSE-supabase-js.txt).
+- Las letras Outfit e Inter se cargan desde Google Fonts (licencia SIL Open Font License).
+
 ## Puesta en marcha
 
 ### 1. Supabase
