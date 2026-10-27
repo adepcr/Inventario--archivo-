@@ -537,6 +537,40 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+// ---------- Instalar la app ----------
+// Android y Chrome/Edge de computadora: el navegador avisa con "beforeinstallprompt" y el botón abre
+// su ventana de instalación. iPhone/iPad no lo permiten: el botón muestra cómo agregarla a inicio.
+let eventoInstalar = null;
+const yaInstalada = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+function mostrarInstalar() {
+  $("instalarBox").hidden = yaInstalada || !(eventoInstalar || esIOS);
+}
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault(); // se muestra con nuestro botón, no con el aviso del navegador
+  eventoInstalar = e;
+  mostrarInstalar();
+});
+window.addEventListener("appinstalled", () => {
+  eventoInstalar = null;
+  $("instalarBox").hidden = true;
+  toast("App instalada. Ya la puede abrir desde su pantalla de inicio.");
+});
+$("instalarBtn").addEventListener("click", async () => {
+  if (eventoInstalar) {
+    eventoInstalar.prompt();
+    const { outcome } = await eventoInstalar.userChoice;
+    eventoInstalar = null; // cada aviso del navegador se puede usar una sola vez
+    if (outcome === "accepted") $("instalarBox").hidden = true;
+    else mostrarInstalar();
+  } else if (esIOS) {
+    $("instalarAyuda").innerHTML = "En iPhone o iPad (con Safari):<br>1. Toque el botón <b>Compartir</b> (el cuadro con una flecha hacia arriba).<br>2. Elija <b>Agregar a inicio</b> y luego <b>Agregar</b>.";
+    $("instalarAyuda").hidden = !$("instalarAyuda").hidden;
+  }
+});
+mostrarInstalar();
+
 // App instalable: guarda la página para que abra rápido y funcione como app.
 // Cuando se publica una versión nueva, la página se recarga sola (si no hay un formulario abierto).
 if ("serviceWorker" in navigator && location.protocol === "https:") {
