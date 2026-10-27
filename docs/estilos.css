@@ -108,6 +108,10 @@ button { cursor: pointer; }
 .hint { margin: 0; color: var(--ink-soft); font-size: .9rem; }
 .hint b { color: var(--head); }
 .formerr { margin: 0; padding: .6rem .8rem; border-radius: .7rem; background: var(--r-soft); color: #b91c1c; font-weight: 600; font-size: .88rem; }
+/* Avisos legales */
+.aviso-legal { margin: 4px 0 0; padding-top: 12px; border-top: 1px dashed var(--line-strong); text-align: center; font-size: .78rem; color: var(--ink-soft); }
+.aviso-datos { margin: 0; padding: .65rem .8rem; border-radius: .7rem; background: var(--gold-soft); border: 1px solid #f0e2b3; color: #6b4f05; font-size: .86rem; }
+.aviso-datos b { color: #5a4204; }
 .formok { margin: 0; padding: .6rem .8rem; border-radius: .7rem; background: var(--g-soft); color: var(--g-dark); font-weight: 600; font-size: .88rem; }
 
 /* ---------- Inicio de sesión ---------- */
