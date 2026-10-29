@@ -13,7 +13,10 @@ Aplicación web para buscar los archivos del Archivo General por categoría (ár
 
 - Hay que iniciar sesión con correo y contraseña. Sin sesión no se ve ningún dato.
 - Nadie puede crearse una cuenta solo: los usuarios los crea el administrador en Supabase.
-- Todas las personas con usuario pueden buscar, agregar, editar y eliminar.
+- Hay dos roles (tabla `roles_usuario`, por correo):
+  - **Editor:** buscar, agregar, editar, eliminar, ver el historial y restablecer contraseñas de compañeros.
+  - **Solo consulta (lector):** solo buscar y ver los archivos. Puede cambiar o recuperar su propia contraseña.
+  - Quien no esté en la tabla es **solo consulta**. Ver *Roles* más abajo para cambiarlo.
 - Los permisos los controla la base de datos (Row Level Security), no la página.
 - Cada cambio queda en la tabla `historial` con el correo de quien lo hizo y la fecha.
 - Los datos del inventario **no están en este repositorio** (es público). Solo están en Supabase.
@@ -110,6 +113,24 @@ El botón **Historial** muestra, del más reciente al más antiguo, quién hizo 
 - Se puede filtrar por *Todo*, *Archivos* o *Contraseñas*.
 
 El historial lo escribe la base de datos: desde la app **nadie lo puede editar ni borrar**. Los cambios hechos directamente desde el panel de Supabase aparecen como *Administrador (panel de Supabase)*.
+
+## Roles
+
+Editores iniciales: `eescobar@adepcr.org`, `camora@adepcr.org` y los usuarios que ya existían al activar los roles.
+Solo consulta: `pmendez@adepcr.org`, `dugalde@adepcr.org` y cualquier usuario nuevo.
+
+Para cambiar el rol de alguien, en Supabase → **SQL Editor**:
+
+```sql
+-- Hacer editor (o 'lector' para dejarlo en solo consulta)
+insert into public.roles_usuario (correo, rol) values ('persona@adepcr.org', 'editor')
+on conflict (correo) do update set rol = excluded.rol, actualizado = now();
+
+-- Ver los roles actuales
+select correo, rol, actualizado from public.roles_usuario order by rol, correo;
+```
+
+El cambio se aplica al instante en la base de datos; en la app se ve al volver a entrar. El correo se escribe en minúsculas.
 
 ## Instalar como app
 

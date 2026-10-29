@@ -65,6 +65,7 @@ El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia
 **Usuarios de la app**
 
 - Agregar: Supabase → **Authentication → Users → Add user → Create new user** (marcar *Auto Confirm User*).
+- Los usuarios nuevos entran como **solo consulta**. Para que alguien pueda agregar, editar y eliminar, darle el rol **editor** (ver *Roles* en el [README](README.md)).
 - Quitar acceso: eliminar el usuario en esa misma lista.
 - Contraseñas olvidadas: botón **¿Olvidó su contraseña?** (por correo) o, en la app, **Cuenta → Restablecer contraseña de un compañero**.
 - Nadie puede crearse una cuenta solo: **Authentication → Sign In / Providers → Allow new users to sign up** debe seguir **desactivado**.

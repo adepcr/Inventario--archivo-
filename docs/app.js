@@ -8,6 +8,7 @@ let data = [];            // registros
 let limit = PAGE;
 let shelfSel = "";
 let confirmId = null, freshId = null, editId = null;
+let esEditor = false;      // "editor" agrega, edita, elimina, ve el historial y restablece contraseñas; "lector" solo consulta
 
 const norm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -98,9 +99,9 @@ function render() {
         <div class="tipo">${hl(r.tipo, tq)}</div>
         <div class="meta"><span class="yr">${esc(r.anio || "Sin año")}</span><span class="ct">${hl(r.contenido || "No especifico", cq)}</span><span>${esc(r.area)}</span></div>
       </div>
-      <div class="rowact">${conf
+      ${esEditor ? `<div class="rowact">${conf
         ? `<span class="q">¿Eliminar este archivo?</span><button class="btn small danger" data-act="yes" type="button">Eliminar</button><button class="btn small" data-act="no" type="button">Cancelar</button>`
-        : `<button class="btn small" data-act="edit" type="button" aria-label="Editar ${esc(r.tipo)}">Editar</button><button class="btn small" data-act="del" type="button" aria-label="Eliminar ${esc(r.tipo)}">Eliminar</button>`}</div>
+        : `<button class="btn small" data-act="edit" type="button" aria-label="Editar ${esc(r.tipo)}">Editar</button><button class="btn small" data-act="del" type="button" aria-label="Eliminar ${esc(r.tipo)}">Eliminar</button>`}</div>` : ""}
     </article>`;
   }).join("");
   $("moreWrap").hidden = rows.length <= limit;
@@ -314,6 +315,22 @@ $("nuevaForm").addEventListener("submit", async e => {
 });
 
 let usuarioActual = null, correoActual = "";
+
+// Rol del usuario según la base de datos. La base es la que realmente impide modificar;
+// esto solo muestra u oculta los botones.
+async function obtenerRol() {
+  const { data: rol, error } = await sb.rpc("mi_rol");
+  if (error) {
+    // Base sin roles todavía (no se ha corrido el SQL nuevo): funciona como antes, todos editan
+    return /Could not find the function|PGRST202|does not exist/i.test((error.message || "") + (error.code || "")) ? "editor" : "lector";
+  }
+  return rol === "editor" ? "editor" : "lector";
+}
+function aplicarRol() {
+  ["addBtn", "histBtn", "compaForm"].forEach(id => $(id).hidden = !esEditor);
+  $("who").innerHTML = `${esc(correoActual)} · <b>${esEditor ? "Editor" : "Solo consulta"}</b>`;
+}
+
 async function entrar(user) {
   if (modoRecuperacion || (user.user_metadata && user.user_metadata.debe_cambiar_clave)) {
     usuarioActual = null;
@@ -325,13 +342,14 @@ async function entrar(user) {
   }
   if (usuarioActual === user.id) return;
   usuarioActual = user.id; correoActual = user.email;
+  esEditor = (await obtenerRol()) === "editor";
+  aplicarRol();
   mostrarVista(true);
-  $("who").textContent = user.email;
   await recargar();
 }
 
 function salir() {
-  usuarioActual = null; correoActual = ""; data = [];
+  usuarioActual = null; correoActual = ""; data = []; esEditor = false;
   ["fArea", "fAnio", "fTipo", "fCont"].forEach(id => $(id).value = ""); shelfSel = ""; limit = PAGE; confirmId = freshId = null;
   $("list").innerHTML = ""; $("count").textContent = "Cargando inventario…"; setStatus("");
   openSheet(false); abrirCuenta(false); abrirHistorial(false);
@@ -370,6 +388,7 @@ async function abrirCuenta(abrir) {
   $("miCorreo").textContent = "Usuario: " + correoActual;
   $("rClave").value = claveTemporal();
   setTimeout(() => $("mActual").focus(), 30);
+  if (!esEditor) return; // solo consulta: no restablece contraseñas de otros
   const { data: lista, error } = await sb.rpc("listar_usuarios");
   if (error) { $("rUsuario").innerHTML = '<option value="">No se pudo cargar la lista</option>'; aviso("compaErr", mensajeError(error)); return; }
   const otros = lista.map(u => u.correo).filter(c => c !== correoActual);

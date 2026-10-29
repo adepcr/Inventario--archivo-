@@ -179,6 +179,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   padding: .3rem .8rem; border-radius: 999px; background: var(--g-soft);
   font-size: .8rem; font-weight: 600; color: var(--g-dark);
 }
+.who b { font-weight: 800; }
 
 .filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 10px; align-items: end; }
 
