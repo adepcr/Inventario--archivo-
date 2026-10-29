@@ -74,7 +74,7 @@ El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia
 | Cada cuánto | Tarea |
 |---|---|
 | Mensual | Botón **Respaldo** de la app: guardar el Excel en una carpeta de ADEP |
-| Cada tanto | Botón **Préstamos**: revisar los atrasados (en rojo) |
+| Cada tanto | Botón **Prestados**: revisar los atrasados (en rojo) |
 | Cuando cambie la contraseña de `encuesta@adepcr.org` | Actualizarla en **SMTP Settings** |
 | Si la app deja de cargar datos | Revisar si Supabase pausó el proyecto y presionar **Restore project**. No se pierden datos. La tarea *Mantener activa la base de datos* (pestaña **Actions** de GitHub) lo evita; si GitHub avisa que falló o que la desactivó, revisarla. |
 

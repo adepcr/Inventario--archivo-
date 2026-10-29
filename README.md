@@ -122,9 +122,9 @@ Cada archivo tiene el botón **Prestar**: se escribe quién se lo lleva, hasta c
 Mientras está afuera, la tarjeta se ve dorada con «Prestado a… desde…» y el botón cambia a **Devolver**.
 Si pasó la fecha de devolución, se ve en rojo («debía volver el…»).
 
-- El botón **Préstamos** (arriba) muestra los archivos prestados, con los atrasados primero, y los ya devueltos.
+- El botón **Prestados** (arriba) muestra los archivos prestados, con los atrasados primero, y los ya devueltos.
 - El filtro **Estado** muestra solo los prestados o solo los que están en el archivo.
-- Cada préstamo y devolución queda en el **Historial** (filtro *Préstamos*) con el correo de quien lo registró.
+- Cada préstamo y devolución queda en el **Historial** (filtro *Prestados*) con el correo de quien lo registró.
 - Nadie puede editar ni borrar un préstamo desde la app. Si se elimina un archivo prestado, su préstamo se conserva.
 
 Si `3_prestamos.sql` no se ha ejecutado en Supabase, la app funciona igual pero sin los botones de préstamos.
@@ -133,7 +133,7 @@ Si `3_prestamos.sql` no se ha ejecutado en Supabase, la app funciona igual pero 
 
 El botón **Respaldo** descarga `Respaldo-Inventario-Archivo-AAAA-MM-DD.xlsx` con todo lo que hay en Supabase en ese momento:
 - Hoja **Inventario**: todos los archivos, con a quién está prestado cada uno.
-- Hoja **Préstamos**: todos los préstamos, abiertos y devueltos.
+- Hoja **Prestados**: todos los préstamos, abiertos y devueltos.
 
 Recomendado: descargarlo **una vez al mes** y guardarlo en una carpeta compartida de ADEP (no en este repositorio, que es público).
 

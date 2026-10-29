@@ -77,9 +77,9 @@
       </div>
       <div class="actions">
         <span class="who" id="who"></span>
-        <button class="btn" id="prestBtn" type="button">Préstamos</button>
+        <button class="btn" id="prestBtn" type="button">Prestados</button>
         <button class="btn" id="histBtn" type="button">Historial</button>
-        <button class="btn" id="respaldoBtn" type="button" title="Descarga todo el inventario y los préstamos en un archivo de Excel">Respaldo</button>
+        <button class="btn" id="respaldoBtn" type="button" title="Descarga todo el inventario y los prestados en un archivo de Excel">Respaldo</button>
         <button class="btn" id="cuentaBtn" type="button">Cuenta</button>
         <button class="btn" id="logoutBtn" type="button">Salir</button>
         <button class="btn primary" id="addBtn" type="button">+ Agregar archivo</button>
@@ -154,7 +154,7 @@
     <p class="formerr" id="prestarErr" hidden></p>
     <div class="formfoot">
       <button class="btn" type="button" id="cancelPrestar">Cancelar</button>
-      <button class="btn primary" type="submit" id="prestarBtn">Registrar préstamo</button>
+      <button class="btn primary" type="submit" id="prestarBtn">Prestar</button>
     </div>
   </form>
 </aside>
@@ -162,7 +162,7 @@
 <!-- Préstamos: los que están afuera y los ya devueltos -->
 <aside class="sheet sheet-ancho" id="prestSheet" hidden aria-labelledby="prestTitle" role="dialog">
   <header>
-    <h2 id="prestTitle">Préstamos</h2>
+    <h2 id="prestTitle">Prestados</h2>
     <button class="btn small" id="closePrest" type="button">Cerrar</button>
   </header>
   <div class="sheet-body">
@@ -186,7 +186,7 @@
     <div class="hist-filtros" id="histFiltros" role="group" aria-label="Mostrar">
       <button class="shelf" type="button" data-f="todo" aria-pressed="true">Todo</button>
       <button class="shelf" type="button" data-f="archivos" aria-pressed="false">Archivos</button>
-      <button class="shelf" type="button" data-f="prestamos" aria-pressed="false">Préstamos</button>
+      <button class="shelf" type="button" data-f="prestamos" aria-pressed="false">Prestados</button>
       <button class="shelf" type="button" data-f="claves" aria-pressed="false">Contraseñas</button>
     </div>
     <p class="hint" id="histEstado">Cargando…</p>

@@ -668,9 +668,9 @@ async function cargarPrestamos(desde) {
     : q.not("devuelto_en", "is", null).order("devuelto_en", { ascending: false });
   const { data: filas, error } = await q.order("id").range(desde, desde + PREST_PAGINA - 1);
   $("prestMas").disabled = false;
-  if (error) { $("prestEstado").textContent = "No se pudieron cargar los préstamos. " + mensajeError(error); $("prestEstado").hidden = false; return; }
+  if (error) { $("prestEstado").textContent = "No se pudieron cargar los prestados. " + mensajeError(error); $("prestEstado").hidden = false; return; }
   prestFilas = desde === 0 ? filas : prestFilas.concat(filas);
-  $("prestEstado").textContent = prestFiltro === "afuera" ? "No hay archivos prestados en este momento." : "Todavía no se ha devuelto ningún préstamo.";
+  $("prestEstado").textContent = prestFiltro === "afuera" ? "No hay archivos prestados en este momento." : "Todavía no se ha devuelto ningún archivo prestado.";
   dibujarPrestamos();
   $("prestMasWrap").hidden = filas.length < PREST_PAGINA;
 }
@@ -726,11 +726,11 @@ $("respaldoBtn").addEventListener("click", async () => {
       })
     }];
     if (prestamosOk) hojas.push({
-      nombre: "Préstamos",
+      nombre: "Prestados",
       columnas: [{ titulo: "Estado", ancho: 11 }, { titulo: "Persona", ancho: 26 }, { titulo: "Tipo / contenido", ancho: 36 }, { titulo: "Contenido específico", ancho: 26 },
         { titulo: "Año", ancho: 12 }, { titulo: "Área", ancho: 22 }, { titulo: "Ubicación", ancho: 32 }, { titulo: "Prestado el", ancho: 14 },
         { titulo: "Devolver antes del", ancho: 18 }, { titulo: "Devuelto el", ancho: 14 }, { titulo: "Nota", ancho: 30 },
-        { titulo: "Registró el préstamo", ancho: 26 }, { titulo: "Recibió la devolución", ancho: 26 }],
+        { titulo: "Registró", ancho: 26 }, { titulo: "Recibió", ancho: 26 }],
       filas: prestamos.sort((x, y) => y.prestado_en.localeCompare(x.prestado_en)).map(p => {
         const a = p.archivo || {};
         return [p.devuelto_en ? "Devuelto" : vencido(p) ? "Atrasado" : "Prestado", p.persona, a.tipo, a.contenido, a.anio, a.area, ubicacion(a),
@@ -742,7 +742,7 @@ $("respaldoBtn").addEventListener("click", async () => {
     enlace.download = `Respaldo-Inventario-Archivo-${hoyISO()}.xlsx`;
     document.body.appendChild(enlace); enlace.click(); enlace.remove();
     setTimeout(() => URL.revokeObjectURL(enlace.href), 10000);
-    toast(`Respaldo descargado: ${archivos.length.toLocaleString("es-CR")} archivos${prestamosOk ? ` y ${prestamos.length.toLocaleString("es-CR")} préstamos` : ""}`);
+    toast(`Respaldo descargado: ${archivos.length.toLocaleString("es-CR")} archivos${prestamosOk ? ` y ${prestamos.length.toLocaleString("es-CR")} prestados` : ""}`);
     setStatus("");
   } catch (err) {
     setStatus("No se pudo preparar el respaldo. " + mensajeError(err), true);
