@@ -77,7 +77,9 @@
       </div>
       <div class="actions">
         <span class="who" id="who"></span>
+        <button class="btn" id="prestBtn" type="button">Préstamos</button>
         <button class="btn" id="histBtn" type="button">Historial</button>
+        <button class="btn" id="respaldoBtn" type="button" title="Descarga todo el inventario y los préstamos en un archivo de Excel">Respaldo</button>
         <button class="btn" id="cuentaBtn" type="button">Cuenta</button>
         <button class="btn" id="logoutBtn" type="button">Salir</button>
         <button class="btn primary" id="addBtn" type="button">+ Agregar archivo</button>
@@ -88,6 +90,7 @@
       <div class="field"><label for="fAnio">Año</label><select id="fAnio"><option value="">Todos</option></select></div>
       <div class="field"><label for="fTipo">Tipo / contenido</label><input id="fTipo" list="dlTipo" placeholder="Ej. caja chica" autocomplete="off"></div>
       <div class="field"><label for="fCont">Contenido específico</label><input id="fCont" placeholder="Ej. marzo, renuncias…" autocomplete="off"></div>
+      <div class="field"><label for="fEstado">Estado</label><select id="fEstado"><option value="">Todos</option><option value="prestado">Prestados</option><option value="archivo">En el archivo</option></select></div>
       <button class="btn clear" id="clearBtn" type="button">Limpiar</button>
     </div>
     <div class="shelves" id="shelves"><span class="lbl">Estante</span></div>
@@ -137,6 +140,42 @@
   </form>
 </aside>
 
+<!-- Prestar un archivo -->
+<aside class="sheet" id="prestarSheet" hidden aria-labelledby="prestarTitle" role="dialog">
+  <header>
+    <h2 id="prestarTitle">Prestar archivo</h2>
+    <button class="btn small" id="closePrestar" type="button">Cerrar</button>
+  </header>
+  <form id="prestarForm" novalidate>
+    <div class="prest-archivo" id="prestarArchivo"></div>
+    <div class="field"><label for="pPersona">¿Quién se lo lleva? *</label><input id="pPersona" maxlength="120" placeholder="Ej. Ana Rojas, Contabilidad" autocomplete="off" required></div>
+    <div class="field"><label for="pHasta">Devolver antes del</label><input id="pHasta" type="date"></div>
+    <div class="field"><label for="pNota">Nota</label><input id="pNota" maxlength="300" placeholder="Ej. Para la auditoría" autocomplete="off"></div>
+    <p class="formerr" id="prestarErr" hidden></p>
+    <div class="formfoot">
+      <button class="btn" type="button" id="cancelPrestar">Cancelar</button>
+      <button class="btn primary" type="submit" id="prestarBtn">Registrar préstamo</button>
+    </div>
+  </form>
+</aside>
+
+<!-- Préstamos: los que están afuera y los ya devueltos -->
+<aside class="sheet sheet-ancho" id="prestSheet" hidden aria-labelledby="prestTitle" role="dialog">
+  <header>
+    <h2 id="prestTitle">Préstamos</h2>
+    <button class="btn small" id="closePrest" type="button">Cerrar</button>
+  </header>
+  <div class="sheet-body">
+    <div class="hist-filtros" id="prestFiltros" role="group" aria-label="Mostrar">
+      <button class="shelf" type="button" data-f="afuera" aria-pressed="true">Prestados</button>
+      <button class="shelf" type="button" data-f="devueltos" aria-pressed="false">Devueltos</button>
+    </div>
+    <p class="hint" id="prestEstado">Cargando…</p>
+    <ol class="hist-lista" id="prestLista"></ol>
+    <div class="more" id="prestMasWrap" hidden><button class="btn" id="prestMas" type="button">Ver más</button></div>
+  </div>
+</aside>
+
 <!-- Historial: quién hizo qué y cuándo (solo lectura) -->
 <aside class="sheet sheet-ancho" id="histSheet" hidden aria-labelledby="histTitle" role="dialog">
   <header>
@@ -147,6 +186,7 @@
     <div class="hist-filtros" id="histFiltros" role="group" aria-label="Mostrar">
       <button class="shelf" type="button" data-f="todo" aria-pressed="true">Todo</button>
       <button class="shelf" type="button" data-f="archivos" aria-pressed="false">Archivos</button>
+      <button class="shelf" type="button" data-f="prestamos" aria-pressed="false">Préstamos</button>
       <button class="shelf" type="button" data-f="claves" aria-pressed="false">Contraseñas</button>
     </div>
     <p class="hint" id="histEstado">Cargando…</p>
@@ -200,6 +240,7 @@
 
 <script src="lib/supabase.js"></script>
 <script src="config.js"></script>
+<script src="xlsx.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
