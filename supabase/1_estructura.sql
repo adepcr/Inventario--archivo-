@@ -3,8 +3,11 @@
 -- Copie todo este archivo en Supabase > SQL Editor > New query > Run
 -- Se puede ejecutar de nuevo sin perder datos.
 --
--- Un solo tipo de usuario: quien tenga usuario y contraseña puede buscar,
--- agregar, editar y eliminar. Sin sesión no se ve nada.
+-- Dos roles (tabla roles_usuario):
+--   editor: buscar, agregar, editar, eliminar, ver el historial y restablecer
+--           contraseñas de compañeros.
+--   lector: solo buscar y ver los archivos (puede cambiar su propia contraseña).
+-- Sin sesión no se ve nada.
 -- =====================================================================
 
 -- ---------- Tablas ----------
@@ -39,16 +42,70 @@ alter table public.historial alter column archivo_id drop not null;
 create index if not exists historial_archivo_idx on public.historial (archivo_id);
 create index if not exists historial_fecha_idx on public.historial (fecha desc);
 
--- ---------- Limpieza de la versión anterior con roles (si se había ejecutado) ----------
+-- ---------- Limpieza de versiones anteriores (si se habían ejecutado) ----------
 
-drop policy if exists "agregar archivos"       on public.archivos;
-drop policy if exists "editar archivos"        on public.archivos;
-drop policy if exists "eliminar archivos"      on public.archivos;
 drop policy if exists "editores ven historial" on public.historial;
+drop policy if exists "modificar archivos"     on public.archivos;
 drop trigger if exists al_crear_usuario on auth.users;
 drop function if exists public.crear_perfil();
-drop function if exists public.es_editor();
 drop table if exists public.perfiles;
+
+-- ---------- Roles ----------
+-- Un rol por correo. Quien no esté en esta tabla es "lector" (solo consulta).
+-- Para cambiar el rol de alguien (SQL Editor):
+--   insert into public.roles_usuario (correo, rol) values ('persona@adepcr.org', 'editor')
+--   on conflict (correo) do update set rol = excluded.rol, actualizado = now();
+create table if not exists public.roles_usuario (
+  correo      text primary key check (correo = lower(btrim(correo))),
+  rol         text not null check (rol in ('editor', 'lector')),
+  actualizado timestamptz not null default now()
+);
+alter table public.roles_usuario enable row level security;
+revoke all on public.roles_usuario from anon, authenticated;
+
+-- Solo la primera vez (tabla vacía): roles pedidos y, para que nadie pierda acceso,
+-- los usuarios que ya existían quedan como editores.
+do $$
+begin
+  if not exists (select 1 from public.roles_usuario) then
+    insert into public.roles_usuario (correo, rol) values
+      ('eescobar@adepcr.org', 'editor'),
+      ('camora@adepcr.org',   'editor'),
+      ('pmendez@adepcr.org',  'lector'),
+      ('dugalde@adepcr.org',  'lector');
+    insert into public.roles_usuario (correo, rol)
+    select lower(btrim(email)), 'editor' from auth.users where email is not null
+    on conflict (correo) do nothing;
+  end if;
+end $$;
+
+-- ¿El usuario que hace la consulta es editor?
+create or replace function public.es_editor()
+returns boolean
+language sql stable security definer set search_path = ''
+as $$
+  select exists (
+    select 1
+    from auth.users u
+    join public.roles_usuario r on r.correo = lower(btrim(u.email))
+    where u.id = auth.uid() and r.rol = 'editor'
+  );
+$$;
+
+-- Rol del usuario que hace la consulta (para que la app muestre u oculte botones)
+create or replace function public.mi_rol()
+returns text
+language sql stable security definer set search_path = ''
+as $$
+  select case when auth.uid() is null then null
+              when public.es_editor() then 'editor'
+              else 'lector' end;
+$$;
+
+revoke execute on function public.es_editor() from public, anon;
+revoke execute on function public.mi_rol() from public, anon;
+grant execute on function public.es_editor() to authenticated;
+grant execute on function public.mi_rol() to authenticated;
 
 -- ---------- Limpieza y validación de datos ----------
 
@@ -111,7 +168,8 @@ create trigger archivos_historial
 
 -- ---------- Seguridad (Row Level Security) ----------
 -- Sin sesión iniciada no se puede ver ni modificar nada.
--- Con sesión: buscar, agregar, editar y eliminar. El historial solo se lee.
+-- Con sesión: todos buscan. Solo los editores agregan, editan, eliminan y ven el historial.
+-- El historial no lo puede escribir nadie desde la app (lo escriben las funciones de la base).
 
 alter table public.archivos  enable row level security;
 alter table public.historial enable row level security;
@@ -125,13 +183,21 @@ drop policy if exists "ver archivos" on public.archivos;
 create policy "ver archivos" on public.archivos
   for select to authenticated using (true);
 
-drop policy if exists "modificar archivos" on public.archivos;
-create policy "modificar archivos" on public.archivos
-  for all to authenticated using (true) with check (true);
+drop policy if exists "agregar archivos" on public.archivos;
+create policy "agregar archivos" on public.archivos
+  for insert to authenticated with check ((select public.es_editor()));
+
+drop policy if exists "editar archivos" on public.archivos;
+create policy "editar archivos" on public.archivos
+  for update to authenticated using ((select public.es_editor())) with check ((select public.es_editor()));
+
+drop policy if exists "eliminar archivos" on public.archivos;
+create policy "eliminar archivos" on public.archivos
+  for delete to authenticated using ((select public.es_editor()));
 
 drop policy if exists "ver historial" on public.historial;
 create policy "ver historial" on public.historial
-  for select to authenticated using (true);
+  for select to authenticated using ((select public.es_editor()));
 
 -- ---------- Contraseñas: restablecer la de un compañero ----------
 -- Si alguien olvida su contraseña, otra persona con sesión le asigna una temporal
@@ -149,14 +215,14 @@ begin
   end if;
 end $$;
 
--- Lista de correos con cuenta (para elegir al compañero)
+-- Lista de correos con cuenta (para elegir al compañero). Solo editores.
 create or replace function public.listar_usuarios()
 returns table (correo text)
 language sql stable security definer set search_path = ''
 as $$
   select u.email::text
   from auth.users u
-  where auth.uid() is not null and u.email is not null
+  where public.es_editor() and u.email is not null
   order by u.email;
 $$;
 
@@ -171,6 +237,9 @@ declare
 begin
   if auth.uid() is null then
     raise exception 'Debe iniciar sesión.';
+  end if;
+  if not public.es_editor() then
+    raise exception 'Su usuario es de solo consulta: no puede restablecer contraseñas.';
   end if;
   if length(coalesce(p_clave, '')) < 8 then
     raise exception 'La contraseña temporal debe tener al menos 8 caracteres.';
