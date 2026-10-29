@@ -1,0 +1,37 @@
+# Supabase (plan gratis) pausa el proyecto si pasa 7 días sin uso.
+# Esta tarea le hace una consulta pequeña los lunes y jueves para que siga activo.
+# No lee ni cambia datos: llama a la función mantener_activo (supabase/3_prestamos.sql).
+# Usa la dirección y la clave pública de docs/config.js.
+#
+# GitHub apaga las tareas programadas de un repositorio que pasa 60 días sin cambios.
+# Para evitarlo, cada vez que corre se vuelve a activar a sí misma.
+name: Mantener activa la base de datos
+
+on:
+  schedule:
+    - cron: "17 14 * * 1,4"   # lunes y jueves, 8:17 a. m. de Costa Rica
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  mantener-activo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Consultar Supabase
+        run: |
+          URL=$(grep -oE 'SUPABASE_URL: *"[^"]+"' docs/config.js | cut -d'"' -f2)
+          KEY=$(grep -oE 'SUPABASE_KEY: *"[^"]+"' docs/config.js | cut -d'"' -f2)
+          RESPUESTA=$(curl -sS --fail-with-body --retry 3 --retry-delay 20 -X POST "$URL/rest/v1/rpc/mantener_activo" \
+            -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}')
+          echo "Supabase respondió: $RESPUESTA"
+          test "$RESPUESTA" = "true"
+
+      - name: Volver a activar esta tarea (para que GitHub no la apague)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/mantener-activo.yml/enable"
