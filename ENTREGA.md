@@ -56,8 +56,8 @@ El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia
 
 ## 2. Archivos a entregar
 
-- [ ] **Respaldo actual de los datos:** Supabase → **Table Editor → archivos → Export → Export to CSV**. Se abre en Excel.
-- [ ] **Respaldo del historial** (opcional): igual, con la tabla `historial`.
+- [ ] **Respaldo actual de los datos:** botón **Respaldo** de la app (Excel con el inventario y los préstamos).
+- [ ] **Respaldo del historial** (opcional): Supabase → **Table Editor → historial → Export → Export to CSV**.
 - [ ] **Datos originales** (respaldo histórico, ya no se usan): `2_datos.sql` y el Excel `INVENTARIO_ARCHIVO_GENERAL.xlsx`. No están en este repositorio porque es público.
 
 ## 3. Lo que la persona nueva debe saber
@@ -74,9 +74,10 @@ El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia
 
 | Cada cuánto | Tarea |
 |---|---|
-| Mensual | Respaldo CSV de la tabla `archivos` |
+| Mensual | Botón **Respaldo** de la app: guardar el Excel en una carpeta de ADEP |
+| Cada tanto | Botón **Prestados**: revisar los atrasados (en rojo) |
 | Cuando cambie la contraseña de `encuesta@adepcr.org` | Actualizarla en **SMTP Settings** |
-| Si la app deja de cargar datos | Revisar si Supabase pausó el proyecto (pasa tras 7 días sin uso) y presionar **Restore project**. No se pierden datos. |
+| Si la app deja de cargar datos | Revisar si Supabase pausó el proyecto y presionar **Restore project**. No se pierden datos. La tarea *Mantener activa la base de datos* (pestaña **Actions** de GitHub) lo evita; si GitHub avisa que falló o que la desactivó, revisarla. |
 
 **Recuperar algo borrado o revisar cambios:** botón **Historial** en la app, o las consultas de la sección *Administración* del [README](README.md).
 
@@ -85,7 +86,7 @@ El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia
 - [ ] La persona nueva confirmó que entra a **Supabase** como Owner.
 - [ ] La persona nueva confirmó que puede editar el **repositorio** (o recibió la cuenta).
 - [ ] TI confirmó que tiene la contraseña de **`encuesta@adepcr.org`**.
-- [ ] Se entregó el último **respaldo CSV**.
+- [ ] Se entregó el último **respaldo en Excel**.
 - [ ] Recién entonces: salir del equipo de Supabase (**Team → Leave team**) y, si corresponde, del repositorio.
 - [ ] Si el usuario propio de la app ya no se usará, eliminarlo en **Authentication → Users**.
 

@@ -181,7 +181,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 }
 .who b { font-weight: 800; }
 
-.filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 10px; align-items: end; }
+.filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, .8fr) auto; gap: 10px; align-items: end; }
+@media (min-width: 861px) { .filters:has(.field[hidden]) { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; } }
 
 /* Estantes */
 .shelves { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -332,6 +333,25 @@ mark { background: linear-gradient(transparent 55%, rgba(143, 240, 189, .7) 55%)
 .pill.modificado { background: var(--gold-soft); color: #7a5a06; }
 .pill.eliminado { background: var(--r-soft); color: #b91c1c; }
 .pill.clave { background: var(--g-deep); color: #fff; }
+.pill.prestado { background: var(--gold-soft); color: #7a5a06; }
+.pill.devuelto { background: var(--g-soft); color: var(--g-dark); }
+.hist-item:has(.pill.prestado)::before { background: var(--gold); }
+.hist-item:has(.pill.devuelto)::before { background: var(--g); }
+.hist-item.atrasado::before { background: var(--r); }
+
+/* ---------- Préstamos ---------- */
+.item.prestado { border-color: #ecd58f; background: linear-gradient(120deg, var(--surface), var(--gold-soft)); }
+.item.prestado::before { background: var(--gold); opacity: 1; }
+.item.vencido { border-color: #f3c2c0; background: linear-gradient(120deg, var(--surface), var(--r-soft)); }
+.item.vencido::before { background: var(--r); }
+.prest-info { margin-top: 6px; font-size: .84rem; font-weight: 600; color: #7a5a06; }
+.item.vencido .prest-info { color: #b91c1c; }
+.count-prest { color: #7a5a06; font-weight: 700; }
+.rowact .q.ok { color: var(--g-dark); }
+.prest-archivo { padding: 12px 14px; border-radius: .9rem; background: var(--g-mist); border: 1px solid var(--line); line-height: 1.6; }
+.prest-quien { font-size: .8rem; color: var(--ink-soft); }
+.prest-acc { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.prest-acc .q { font-size: .84rem; font-weight: 700; color: var(--g-dark); }
 .hist-que { margin: 0; overflow-wrap: anywhere; }
 .hist-que b { font-family: var(--font-display); font-weight: 700; color: var(--head); }
 .hist-cambios { margin: 2px 0 0; padding-left: 18px; font-size: .86rem; color: var(--ink-soft); }

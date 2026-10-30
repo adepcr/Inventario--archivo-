@@ -1,4 +1,4 @@
-// Inventario del Archivo General: búsqueda, agregar, editar y eliminar.
+// Inventario del Archivo General: búsqueda, agregar, editar, eliminar, préstamos y respaldo.
 // Los datos viven en Supabase (base de datos en la nube con inicio de sesión).
 // La conexión se configura en config.js.
 
@@ -9,6 +9,9 @@ let limit = PAGE;
 let shelfSel = "";
 let confirmId = null, freshId = null, editId = null;
 let esEditor = false;      // "editor" agrega, edita, elimina, ve el historial y restablece contraseñas; "lector" solo consulta
+let confirmDev = null;    // archivo cuya devolución se está confirmando
+let activos = new Map();  // préstamos sin devolver, por id de archivo
+let prestamosOk = false;  // false si todavía no se ejecutó supabase/3_prestamos.sql
 
 const norm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -56,13 +59,26 @@ function fillOptions() {
 }
 
 function filtered(ignoreShelf) {
-  const area = $("fArea").value, anio = $("fAnio").value;
+  const area = $("fArea").value, anio = $("fAnio").value, estado = $("fEstado").value;
   const tipo = norm($("fTipo").value), cont = norm($("fCont").value);
   return data.filter(r =>
     (!area || r.area === area) && matchYear(r.anio, anio) &&
     (!tipo || norm(r.tipo).includes(tipo)) &&
     (!cont || norm(r.contenido).includes(cont)) &&
+    (!estado || (estado === "prestado") === activos.has(r.id)) &&
     (ignoreShelf || !shelfSel || r.estante === shelfSel));
+}
+
+// Fechas: las de solo día ("2026-11-05") se leen como día local, no en hora UTC
+const hoyISO = () => new Date().toLocaleDateString("en-CA");
+const comoFecha = f => new Date(/^\d{4}-\d{2}-\d{2}$/.test(f) ? f + "T00:00" : f);
+const fechaCorta = f => f ? comoFecha(f).toLocaleDateString("es-CR", { day: "numeric", month: "short", year: "numeric" }) : "";
+const vencido = p => !!(p && p.devolver_antes && p.devolver_antes < hoyISO());
+
+function textoPrestamo(p) {
+  let t = `Prestado a ${esc(p.persona)} desde el ${fechaCorta(p.prestado_en)}`;
+  if (p.devolver_antes) t += vencido(p) ? ` · <b>debía volver el ${fechaCorta(p.devolver_antes)}</b>` : ` · vuelve antes del ${fechaCorta(p.devolver_antes)}`;
+  return t;
 }
 
 function renderShelves() {
@@ -79,17 +95,26 @@ function render() {
   renderShelves();
   const rows = filtered().sort(sortRows);
   const tq = norm($("fTipo").value), cq = norm($("fCont").value);
-  const active = $("fArea").value || $("fAnio").value || tq || cq || shelfSel;
-  $("count").innerHTML = active
+  const active = $("fArea").value || $("fAnio").value || $("fEstado").value || tq || cq || shelfSel;
+  const nPrest = data.filter(r => activos.has(r.id)).length;
+  $("count").innerHTML = (active
     ? `<strong>${rows.length.toLocaleString("es-CR")}</strong> de ${data.length.toLocaleString("es-CR")} archivos coinciden`
-    : `<strong>${data.length.toLocaleString("es-CR")}</strong> archivos en el inventario`;
+    : `<strong>${data.length.toLocaleString("es-CR")}</strong> archivos en el inventario`) +
+    (nPrest ? ` · <span class="count-prest">${nPrest.toLocaleString("es-CR")} prestado${nPrest === 1 ? "" : "s"}</span>` : "");
   if (!rows.length) {
     $("list").innerHTML = `<div class="empty">No hay archivos con esos criterios.<br>Pruebe con menos filtros o revise la ortografía.</div>`;
     $("moreWrap").hidden = true; return;
   }
   $("list").innerHTML = rows.slice(0, limit).map(r => {
-    const conf = confirmId === r.id;
-    return `<article class="item${conf ? " confirm" : ""}${freshId === r.id ? " fresh" : ""}" data-id="${r.id}">
+    const conf = confirmId === r.id, p = activos.get(r.id), dev = p && confirmDev === r.id;
+    const botonPrestamo = !prestamosOk ? ""
+      : p ? `<button class="btn small" data-act="dev" type="button" aria-label="Marcar como devuelto ${esc(r.tipo)}">Devolver</button>`
+      : `<button class="btn small" data-act="prestar" type="button" aria-label="Prestar ${esc(r.tipo)}">Prestar</button>`;
+    let acciones;
+    if (conf) acciones = `<span class="q">¿Eliminar este archivo?${p ? " Está prestado." : ""}</span><button class="btn small danger" data-act="yes" type="button">Eliminar</button><button class="btn small" data-act="no" type="button">Cancelar</button>`;
+    else if (dev) acciones = `<span class="q ok">¿Ya lo devolvieron?</span><button class="btn small primary" data-act="devsi" type="button">Sí, devuelto</button><button class="btn small" data-act="devno" type="button">Cancelar</button>`;
+    else acciones = `${botonPrestamo}<button class="btn small" data-act="edit" type="button" aria-label="Editar ${esc(r.tipo)}">Editar</button><button class="btn small" data-act="del" type="button" aria-label="Eliminar ${esc(r.tipo)}">Eliminar</button>`;
+    return `<article class="item${conf ? " confirm" : ""}${p ? " prestado" : ""}${vencido(p) ? " vencido" : ""}${freshId === r.id ? " fresh" : ""}" data-id="${r.id}">
       <div class="loc">
         <div><small>Estante</small><b>${esc(r.estante)}</b></div>
         <div><small>Nivel</small><b>${esc(r.nivel)}</b></div>
@@ -98,10 +123,9 @@ function render() {
       <div class="desc">
         <div class="tipo">${hl(r.tipo, tq)}</div>
         <div class="meta"><span class="yr">${esc(r.anio || "Sin año")}</span><span class="ct">${hl(r.contenido || "No especifico", cq)}</span><span>${esc(r.area)}</span></div>
+        ${p ? `<div class="prest-info">${textoPrestamo(p)}</div>` : ""}
       </div>
-      ${esEditor ? `<div class="rowact">${conf
-        ? `<span class="q">¿Eliminar este archivo?</span><button class="btn small danger" data-act="yes" type="button">Eliminar</button><button class="btn small" data-act="no" type="button">Cancelar</button>`
-        : `<button class="btn small" data-act="edit" type="button" aria-label="Editar ${esc(r.tipo)}">Editar</button><button class="btn small" data-act="del" type="button" aria-label="Eliminar ${esc(r.tipo)}">Eliminar</button>`}</div>` : ""}
+      ${esEditor ? `<div class="rowact">${acciones}</div>` : ""}
     </article>`;
   }).join("");
   $("moreWrap").hidden = rows.length <= limit;
@@ -136,15 +160,33 @@ function mensajeError(error) {
 }
 
 // Supabase entrega máximo 1000 filas por consulta, así que se pide por partes
-async function cargarTodo() {
+async function cargarPorPartes(consulta) {
   const todos = [];
   for (let desde = 0; ; desde += 1000) {
-    const { data: parte, error } = await sb.from("archivos").select(COLUMNAS).order("id").range(desde, desde + 999);
+    const { data: parte, error } = await consulta().range(desde, desde + 999);
     if (error) throw error;
     todos.push(...parte);
     if (parte.length < 1000) break;
   }
-  return todos.map(normalizar);
+  return todos;
+}
+async function cargarTodo() {
+  return (await cargarPorPartes(() => sb.from("archivos").select(COLUMNAS).order("id"))).map(normalizar);
+}
+
+const COLUMNAS_PREST = "id, archivo_id, archivo, persona, nota, devolver_antes, prestado_en, prestado_por, devuelto_en, devuelto_por";
+// Si la tabla de préstamos todavía no existe en Supabase, la app funciona sin préstamos
+async function cargarActivos() {
+  try {
+    const filas = await cargarPorPartes(() => sb.from("prestamos").select(COLUMNAS_PREST).is("devuelto_en", null).order("id"));
+    activos = new Map(filas.filter(p => p.archivo_id !== null).map(p => [String(p.archivo_id), p]));
+    prestamosOk = true;
+  } catch (err) {
+    if (!/prestamos|PGRST205|42P01/i.test((err.message || "") + err.code)) throw err;
+    activos = new Map(); prestamosOk = false;
+  }
+  $("prestBtn").hidden = !prestamosOk;
+  $("fEstado").closest(".field").hidden = !prestamosOk;
 }
 
 // Los ids llegan como números; en la página se manejan como texto (data-id)
@@ -156,8 +198,16 @@ $("list").addEventListener("click", async e => {
   const id = b.closest(".item").dataset.id;
   const act = b.dataset.act;
   if (act === "edit") openSheet(true, data.find(x => x.id === id));
-  else if (act === "del") { confirmId = id; render(); }
+  else if (act === "del") { confirmId = id; confirmDev = null; render(); }
   else if (act === "no") { confirmId = null; render(); }
+  else if (act === "prestar") abrirPrestar(data.find(x => x.id === id));
+  else if (act === "dev") { confirmDev = id; confirmId = null; render(); }
+  else if (act === "devno") { confirmDev = null; render(); }
+  else if (act === "devsi") {
+    b.disabled = true;
+    if (await devolver(activos.get(id))) { confirmDev = null; render(); }
+    else b.disabled = false;
+  }
   else if (act === "yes") {
     const r = data.find(x => x.id === id);
     b.disabled = true;
@@ -168,7 +218,7 @@ $("list").addEventListener("click", async e => {
       setStatus("No se pudo eliminar. " + (error ? mensajeError(error) : "Puede que otra persona ya lo eliminara. Recargue la página."), true);
       return;
     }
-    data = data.filter(x => x.id !== id); confirmId = null;
+    data = data.filter(x => x.id !== id); activos.delete(id); confirmId = null;
     fillOptions(); render(); setStatus("");
     toast(`Eliminado: ${r.tipo} (${ubicacion(r)})`);
   }
@@ -177,9 +227,9 @@ $("shelves").addEventListener("click", e => {
   const b = e.target.closest(".shelf"); if (!b) return;
   shelfSel = b.dataset.s; limit = PAGE; render();
 });
-["fArea", "fAnio"].forEach(id => $(id).addEventListener("change", () => { limit = PAGE; render(); }));
+["fArea", "fAnio", "fEstado"].forEach(id => $(id).addEventListener("change", () => { limit = PAGE; render(); }));
 ["fTipo", "fCont"].forEach(id => $(id).addEventListener("input", () => { limit = PAGE; render(); }));
-$("clearBtn").addEventListener("click", () => { ["fArea", "fAnio", "fTipo", "fCont"].forEach(id => $(id).value = ""); shelfSel = ""; limit = PAGE; render(); });
+$("clearBtn").addEventListener("click", () => { ["fArea", "fAnio", "fEstado", "fTipo", "fCont"].forEach(id => $(id).value = ""); shelfSel = ""; limit = PAGE; render(); });
 $("moreBtn").addEventListener("click", () => { limit += PAGE; render(); });
 
 // ---------- Formulario (agregar y editar) ----------
@@ -188,7 +238,8 @@ const OBLIGATORIOS = { estante: "Estante", nivel: "Nivel", bloque: "Bloque", tip
 let formDeEdicion = false; // el formulario quedó con los datos de una edición
 
 function openSheet(o, registro) {
-  $("sheet").hidden = !o; $("scrim").hidden = !o; $("formErr").hidden = true;
+  $("sheet").hidden = !o; $("formErr").hidden = true;
+  ajustarScrim();
   if (!o) return;
   editId = registro ? registro.id : null;
   $("sheetTitle").textContent = registro ? "Editar archivo" : "Agregar archivo";
@@ -205,13 +256,9 @@ function openSheet(o, registro) {
 $("addBtn").addEventListener("click", () => openSheet(true));
 $("closeSheet").addEventListener("click", () => openSheet(false));
 $("cancelAdd").addEventListener("click", () => openSheet(false));
-$("scrim").addEventListener("click", () => { openSheet(false); abrirCuenta(false); abrirHistorial(false); });
-document.addEventListener("keydown", e => {
-  if (e.key !== "Escape") return;
-  if (!$("sheet").hidden) openSheet(false);
-  if (!$("cuentaSheet").hidden) abrirCuenta(false);
-  if (!$("histSheet").hidden) abrirHistorial(false);
-});
+function cerrarPaneles() { openSheet(false); abrirCuenta(false); abrirHistorial(false); abrirPrestar(null); abrirPrestamos(false); }
+$("scrim").addEventListener("click", cerrarPaneles);
+document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarPaneles(); });
 
 $("addForm").addEventListener("submit", async e => {
   e.preventDefault();
@@ -327,7 +374,8 @@ async function obtenerRol() {
   return rol === "editor" ? "editor" : "lector";
 }
 function aplicarRol() {
-  ["addBtn", "histBtn", "compaForm"].forEach(id => $(id).hidden = !esEditor);
+  // Solo consulta puede ver los archivos y qué está prestado, pero no prestar, devolver ni descargar el respaldo
+  ["addBtn", "histBtn", "respaldoBtn", "compaForm"].forEach(id => $(id).hidden = !esEditor);
   $("who").innerHTML = `${esc(correoActual)} · <b>${esEditor ? "Editor" : "Solo consulta"}</b>`;
 }
 
@@ -349,17 +397,18 @@ async function entrar(user) {
 }
 
 function salir() {
-  usuarioActual = null; correoActual = ""; data = []; esEditor = false;
-  ["fArea", "fAnio", "fTipo", "fCont"].forEach(id => $(id).value = ""); shelfSel = ""; limit = PAGE; confirmId = freshId = null;
+  usuarioActual = null; correoActual = ""; data = []; activos = new Map(); esEditor = false;
+  ["fArea", "fAnio", "fEstado", "fTipo", "fCont"].forEach(id => $(id).value = ""); shelfSel = ""; limit = PAGE; confirmId = confirmDev = freshId = null;
   $("list").innerHTML = ""; $("count").textContent = "Cargando inventario…"; setStatus("");
-  openSheet(false); abrirCuenta(false); abrirHistorial(false);
+  cerrarPaneles();
   mostrarTarjeta("loginForm");
   if (faltaConfig) aviso("loginErr", "Falta configurar la conexión: complete config.js con los datos de su proyecto de Supabase.");
 }
 
 async function recargar() {
   try {
-    data = await cargarTodo();
+    const [archivos] = await Promise.all([cargarTodo(), cargarActivos()]);
+    data = archivos;
     fillOptions(); render(); setStatus("");
   } catch (err) {
     if (!data.length) $("count").textContent = "No se pudo cargar el inventario.";
@@ -376,7 +425,8 @@ function claveTemporal() {
 }
 
 // El fondo oscuro se ve mientras haya algún panel abierto
-const ajustarScrim = () => { $("scrim").hidden = ["sheet", "cuentaSheet", "histSheet"].every(id => $(id).hidden); };
+const PANELES = ["sheet", "cuentaSheet", "histSheet", "prestarSheet", "prestSheet"];
+const ajustarScrim = () => { $("scrim").hidden = PANELES.every(id => $(id).hidden); };
 
 async function abrirCuenta(abrir) {
   $("cuentaSheet").hidden = !abrir;
@@ -457,6 +507,7 @@ const HIST_PAGINA = 100;
 const ACCIONES = {
   todo: null,
   archivos: ["agregado", "modificado", "eliminado"],
+  prestamos: ["prestado", "devuelto"],
   claves: ["clave_restablecida", "clave_cambiada", "clave_recuperada"]
 };
 const CAMPOS_HIST = { estante: "Estante", nivel: "Nivel", bloque: "Bloque", anio: "Año", tipo: "Tipo", contenido: "Contenido", area: "Área" };
@@ -480,6 +531,14 @@ function itemHist(h) {
     que = `<b>${esc(d.tipo)}</b><br>${ubicHist(d)}`;
     const cambios = Object.keys(CAMPOS_HIST).filter(k => a[k] !== d[k]);
     if (cambios.length) extra = `<ul class="hist-cambios">${cambios.map(k => `<li>${CAMPOS_HIST[k]}: <s>${esc(a[k])}</s> → <ins>${esc(d[k])}</ins></li>`).join("")}</ul>`;
+  } else if (h.accion === "prestado") {
+    pill = ["prestado", "Prestó"];
+    que = `<b>${esc(d.tipo)}</b> — ${esc(d.anio)}, ${esc(d.contenido)}<br>a <b>${esc(d.persona)}</b>` +
+      (d.devolver_antes ? ` · devolver antes del ${fechaCorta(d.devolver_antes)}` : "") +
+      (d.nota ? `<br>Nota: ${esc(d.nota)}` : "") + `<br>${ubicHist(d)}`;
+  } else if (h.accion === "devuelto") {
+    pill = ["devuelto", "Devolvió"];
+    que = `<b>${esc(d.tipo)}</b> — ${esc(d.anio)}, ${esc(d.contenido)}<br>lo tenía <b>${esc(d.persona)}</b> desde el ${fechaCorta(a.prestado_en)}<br>${ubicHist(d)}`;
   } else if (h.accion === "clave_restablecida") {
     pill = ["clave", "Contraseña"];
     que = `Restableció la contraseña de <b>${esc(d.para)}</b>`;
@@ -548,10 +607,174 @@ sb.auth.onAuthStateChange((evento, sesion) => {
   }, 0);
 });
 
+// ---------- Préstamos ----------
+let prestandoId = null;
+
+function abrirPrestar(registro) {
+  $("prestarSheet").hidden = !registro;
+  ajustarScrim();
+  if (!registro) { prestandoId = null; return; }
+  prestandoId = registro.id;
+  $("prestarArchivo").innerHTML = `<b>${esc(registro.tipo)}</b><br>${esc(registro.anio)} · ${esc(registro.contenido)} · ${esc(registro.area)}<br>${esc(ubicacion(registro))}`;
+  ["pPersona", "pHasta", "pNota"].forEach(id => $(id).value = "");
+  $("pHasta").min = hoyISO();
+  $("prestarErr").hidden = true;
+  setTimeout(() => $("pPersona").focus(), 30);
+}
+$("closePrestar").addEventListener("click", () => abrirPrestar(null));
+$("cancelPrestar").addEventListener("click", () => abrirPrestar(null));
+
+$("prestarForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const persona = $("pPersona").value.replace(/\s+/g, " ").trim(), hasta = $("pHasta").value;
+  if (persona.length < 2) { aviso("prestarErr", "Escriba quién se lleva el archivo."); return; }
+  if (hasta && hasta < hoyISO()) { aviso("prestarErr", "La fecha de devolución no puede ser anterior a hoy."); return; }
+  $("prestarBtn").disabled = true; $("prestarErr").hidden = true;
+  const { data: p, error } = await sb.rpc("prestar_archivo", {
+    p_archivo: Number(prestandoId), p_persona: persona, p_devolver_antes: hasta || null, p_nota: $("pNota").value.trim() || null
+  });
+  $("prestarBtn").disabled = false;
+  if (error) { aviso("prestarErr", mensajeError(error)); return; }
+  activos.set(String(p.archivo_id), p);
+  freshId = String(p.archivo_id);
+  abrirPrestar(null); render();
+  toast(`Prestado a ${p.persona}`);
+});
+
+// Marca un préstamo como devuelto. Devuelve true si se pudo.
+async function devolver(p) {
+  const { data: hecho, error } = await sb.rpc("devolver_archivo", { p_prestamo: p.id });
+  if (error) { setStatus("No se pudo marcar como devuelto. " + mensajeError(error), true); return false; }
+  if (hecho.archivo_id !== null) activos.delete(String(hecho.archivo_id));
+  setStatus("");
+  toast(`Devuelto: ${hecho.archivo.tipo} (${ubicacion(hecho.archivo)})`);
+  return true;
+}
+
+// Panel con la lista de préstamos
+const PREST_PAGINA = 100;
+let prestFiltro = "afuera", prestDesde = 0, prestFilas = [], prestConfirma = null;
+
+function itemPrestamo(p) {
+  const a = p.archivo || {}, afuera = !p.devuelto_en;
+  const estado = afuera
+    ? `<span class="pill ${vencido(p) ? "eliminado" : "prestado"}">${vencido(p) ? "Atrasado" : "Prestado"}</span>`
+    : `<span class="pill devuelto">Devuelto</span>`;
+  const fechas = afuera
+    ? `Desde el ${fechaCorta(p.prestado_en)}${p.devolver_antes ? ` · ${vencido(p) ? "debía volver" : "vuelve antes del"} ${fechaCorta(p.devolver_antes)}` : ""}`
+    : `Del ${fechaCorta(p.prestado_en)} al ${fechaCorta(p.devuelto_en)}`;
+  const quien = `Registró: ${esc(p.prestado_por || "Administrador")}${p.devuelto_por ? ` · Recibió: ${esc(p.devuelto_por)}` : ""}`;
+  let acc = "";
+  if (afuera && esEditor) acc = prestConfirma === p.id
+    ? `<div class="prest-acc"><span class="q ok">¿Ya lo devolvieron?</span><button class="btn small primary" type="button" data-pa="si" data-p="${p.id}">Sí, devuelto</button><button class="btn small" type="button" data-pa="no">Cancelar</button></div>`
+    : `<div class="prest-acc"><button class="btn small" type="button" data-pa="dev" data-p="${p.id}">Marcar devuelto</button></div>`;
+  return `<li class="hist-item${afuera && vencido(p) ? " atrasado" : ""}">
+    <div class="hist-cab">${estado}<span class="hist-quien"><b>${esc(p.persona)}</b></span><time>${fechas}</time></div>
+    <p class="hist-que"><b>${esc(a.tipo)}</b> — ${esc(a.anio)}, ${esc(a.contenido)}<br>${ubicHist(a)}${p.archivo_id === null ? " · <i>ya no está en el inventario</i>" : ""}${p.nota ? `<br>Nota: ${esc(p.nota)}` : ""}</p>
+    <p class="hist-que prest-quien">${quien}</p>${acc}
+  </li>`;
+}
+const dibujarPrestamos = () => {
+  $("prestLista").innerHTML = prestFilas.map(itemPrestamo).join("");
+  $("prestEstado").hidden = prestFilas.length > 0;
+};
+
+async function cargarPrestamos(desde) {
+  prestDesde = desde;
+  $("prestMas").disabled = true;
+  let q = sb.from("prestamos").select(COLUMNAS_PREST);
+  q = prestFiltro === "afuera"
+    ? q.is("devuelto_en", null).order("prestado_en", { ascending: true })
+    : q.not("devuelto_en", "is", null).order("devuelto_en", { ascending: false });
+  const { data: filas, error } = await q.order("id").range(desde, desde + PREST_PAGINA - 1);
+  $("prestMas").disabled = false;
+  if (error) { $("prestEstado").textContent = "No se pudieron cargar los prestados. " + mensajeError(error); $("prestEstado").hidden = false; return; }
+  prestFilas = desde === 0 ? filas : prestFilas.concat(filas);
+  $("prestEstado").textContent = prestFiltro === "afuera" ? "No hay archivos prestados en este momento." : "Todavía no se ha devuelto ningún archivo prestado.";
+  dibujarPrestamos();
+  $("prestMasWrap").hidden = filas.length < PREST_PAGINA;
+}
+
+function abrirPrestamos(abrir) {
+  $("prestSheet").hidden = !abrir;
+  ajustarScrim();
+  if (!abrir) return;
+  prestFilas = []; prestConfirma = null;
+  $("prestLista").innerHTML = ""; $("prestEstado").textContent = "Cargando…"; $("prestEstado").hidden = false; $("prestMasWrap").hidden = true;
+  cargarPrestamos(0);
+}
+$("prestBtn").addEventListener("click", () => abrirPrestamos(true));
+$("closePrest").addEventListener("click", () => abrirPrestamos(false));
+$("prestMas").addEventListener("click", () => cargarPrestamos(prestDesde + PREST_PAGINA));
+$("prestFiltros").addEventListener("click", e => {
+  const b = e.target.closest("[data-f]"); if (!b) return;
+  prestFiltro = b.dataset.f;
+  $("prestFiltros").querySelectorAll("[data-f]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  abrirPrestamos(true);
+});
+$("prestLista").addEventListener("click", async e => {
+  const b = e.target.closest("[data-pa]"); if (!b) return;
+  if (b.dataset.pa === "dev") { prestConfirma = Number(b.dataset.p); dibujarPrestamos(); return; }
+  if (b.dataset.pa === "no") { prestConfirma = null; dibujarPrestamos(); return; }
+  b.disabled = true;
+  const p = prestFilas.find(x => x.id === Number(b.dataset.p));
+  if (!(await devolver(p))) { b.disabled = false; return; }
+  prestFilas = prestFilas.filter(x => x !== p); prestConfirma = null;
+  dibujarPrestamos(); render();
+});
+
+// ---------- Respaldo en Excel ----------
+// Descarga todo el inventario y todos los préstamos, recién traídos de Supabase
+$("respaldoBtn").addEventListener("click", async () => {
+  const btn = $("respaldoBtn");
+  btn.disabled = true; btn.textContent = "Preparando…";
+  try {
+    const [archivos, prestamos] = await Promise.all([
+      cargarTodo(),
+      prestamosOk ? cargarPorPartes(() => sb.from("prestamos").select(COLUMNAS_PREST).order("id")) : []
+    ]);
+    const afuera = new Map(prestamos.filter(p => !p.devuelto_en && p.archivo_id !== null).map(p => [String(p.archivo_id), p]));
+    const hojas = [{
+      nombre: "Inventario",
+      columnas: [{ titulo: "Código", ancho: 9 }, { titulo: "Estante", ancho: 9 }, { titulo: "Nivel", ancho: 14 }, { titulo: "Bloque", ancho: 9 },
+        { titulo: "Año", ancho: 12 }, { titulo: "Tipo / contenido", ancho: 36 }, { titulo: "Contenido específico", ancho: 30 }, { titulo: "Área", ancho: 24 },
+        ...(prestamosOk ? [{ titulo: "Prestado a", ancho: 26 }, { titulo: "Prestado desde", ancho: 16 }, { titulo: "Devolver antes del", ancho: 18 }] : [])],
+      filas: archivos.sort(sortRows).map(r => {
+        const p = afuera.get(r.id);
+        return [r.id, r.estante, r.nivel, r.bloque, r.anio, r.tipo, r.contenido, r.area,
+          ...(prestamosOk ? [p ? p.persona : "", p ? fechaCorta(p.prestado_en) : "", p ? fechaCorta(p.devolver_antes) : ""] : [])];
+      })
+    }];
+    if (prestamosOk) hojas.push({
+      nombre: "Prestados",
+      columnas: [{ titulo: "Estado", ancho: 11 }, { titulo: "Persona", ancho: 26 }, { titulo: "Tipo / contenido", ancho: 36 }, { titulo: "Contenido específico", ancho: 26 },
+        { titulo: "Año", ancho: 12 }, { titulo: "Área", ancho: 22 }, { titulo: "Ubicación", ancho: 32 }, { titulo: "Prestado el", ancho: 14 },
+        { titulo: "Devolver antes del", ancho: 18 }, { titulo: "Devuelto el", ancho: 14 }, { titulo: "Nota", ancho: 30 },
+        { titulo: "Registró", ancho: 26 }, { titulo: "Recibió", ancho: 26 }],
+      filas: prestamos.sort((x, y) => y.prestado_en.localeCompare(x.prestado_en)).map(p => {
+        const a = p.archivo || {};
+        return [p.devuelto_en ? "Devuelto" : vencido(p) ? "Atrasado" : "Prestado", p.persona, a.tipo, a.contenido, a.anio, a.area, ubicacion(a),
+          fechaCorta(p.prestado_en), fechaCorta(p.devolver_antes), fechaCorta(p.devuelto_en), p.nota, p.prestado_por, p.devuelto_por];
+      })
+    });
+    const enlace = document.createElement("a");
+    enlace.href = URL.createObjectURL(crearExcel(hojas));
+    enlace.download = `Respaldo-Inventario-Archivo-${hoyISO()}.xlsx`;
+    document.body.appendChild(enlace); enlace.click(); enlace.remove();
+    setTimeout(() => URL.revokeObjectURL(enlace.href), 10000);
+    toast(`Respaldo descargado: ${archivos.length.toLocaleString("es-CR")} archivos${prestamosOk ? ` y ${prestamos.length.toLocaleString("es-CR")} prestados` : ""}`);
+    setStatus("");
+  } catch (err) {
+    setStatus("No se pudo preparar el respaldo. " + mensajeError(err), true);
+  } finally {
+    btn.disabled = false; btn.textContent = "Respaldo";
+  }
+});
+
 // Al volver a la app (otra pestaña, celular desbloqueado) trae los cambios que hicieron otras personas
 let ultimaCarga = Date.now();
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && usuarioActual && $("sheet").hidden && Date.now() - ultimaCarga > 30000) {
+  if (document.visibilityState === "visible" && usuarioActual && $("sheet").hidden && $("prestarSheet").hidden && Date.now() - ultimaCarga > 30000) {
     ultimaCarga = Date.now(); recargar();
   }
 });
@@ -597,7 +820,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   let recargando = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!habiaVersion || recargando) return;
-    const ocupado = !$("sheet").hidden || !$("cuentaSheet").hidden || !$("nuevaForm").hidden;
+    const ocupado = !$("sheet").hidden || !$("cuentaSheet").hidden || !$("prestarSheet").hidden || !$("nuevaForm").hidden;
     if (ocupado) { toast("Hay una versión nueva de la app. Recargue la página cuando termine."); return; }
     recargando = true;
     location.reload();
