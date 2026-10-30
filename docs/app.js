@@ -376,7 +376,8 @@ async function obtenerRol() {
 function aplicarRol() {
   // Solo consulta puede ver los archivos y qué está prestado, pero no prestar, devolver ni descargar el respaldo
   ["addBtn", "histBtn", "respaldoBtn", "compaForm"].forEach(id => $(id).hidden = !esEditor);
-  $("who").innerHTML = `${esc(correoActual)} · <b>${esEditor ? "Editor" : "Solo consulta"}</b>`;
+  $("who").innerHTML = `<span class="who-mail" title="${esc(correoActual)}">${esc(correoActual)}</span>` +
+    `<span class="who-rol ${esEditor ? "editor" : "lector"}">${esEditor ? "Editor" : "Solo consulta"}</span>`;
 }
 
 async function entrar(user) {
