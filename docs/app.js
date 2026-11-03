@@ -322,8 +322,12 @@ $("olvidoForm").addEventListener("submit", async e => {
   $("olvidoErr").hidden = true; $("olvidoOk").hidden = true;
   if (!/^\S+@\S+\.\S+$/.test(correo)) { aviso("olvidoErr", "Escriba un correo válido."); return; }
   $("olvidoBtn").disabled = true;
-  // El enlace del correo vuelve a esta misma página
-  const { error } = await sb.auth.resetPasswordForEmail(correo, { redirectTo: location.origin + location.pathname });
+  // El enlace del correo vuelve a esta misma página. Si se abrió en una computadora de pruebas
+  // (Live Server: 127.0.0.1 o localhost), no se indica dirección y Supabase usa su Site URL,
+  // que es la app oficial; así el enlace también funciona desde el celular.
+  const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.protocol === "file:";
+  const opciones = local ? {} : { redirectTo: location.origin + location.pathname };
+  const { error } = await sb.auth.resetPasswordForEmail(correo, opciones);
   $("olvidoBtn").disabled = false;
   if (error) { aviso("olvidoErr", mensajeError(error)); return; }
   // Mismo mensaje exista o no el correo, para no revelar quién tiene cuenta
