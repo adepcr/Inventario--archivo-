@@ -8,19 +8,20 @@ Guía para traspasar la app a otra persona y que siga funcionando sin depender d
 
 | Qué | Dónde |
 |---|---|
-| App | https://adepcr.github.io/Inventario--archivo-/ |
+| App | https://inventario-archivo-docs.vercel.app/ (oficial) · https://adepcr.github.io/Inventario--archivo-/ (respaldo) |
 | Código (este repositorio) | https://github.com/adepcr/Inventario--archivo- (organización `adepcr`) |
+| Publicación en Vercel | https://vercel.com/dashboard (proyecto `inventario-archivo-docs`) |
 | Base de datos y usuarios | https://supabase.com/dashboard (proyecto `inventario-archivo`) |
 | Correo que envía los avisos | `encuesta@adepcr.org` (Microsoft 365, cuenta de la institución) |
 | Instrucciones técnicas | [README.md](README.md) |
 
 ## Cómo está armado
 
-- **GitHub Pages** publica la página desde la carpeta `docs/` de este repositorio.
+- **Vercel** publica la página (enlace oficial) desde la carpeta `docs/` de este repositorio. **GitHub Pages** publica la misma página como respaldo.
 - **Supabase** guarda los archivos del inventario, los usuarios de la app y el historial.
 - **Microsoft 365** (`encuesta@adepcr.org`) envía los correos de "¿Olvidó su contraseña?".
 
-Si una de las tres cuentas se pierde, se pierde esa parte. Por eso hay que traspasar las tres.
+Si una de estas cuentas se pierde, se pierde esa parte. Por eso hay que traspasarlas todas.
 
 ## 1. Accesos a traspasar
 
@@ -43,7 +44,16 @@ El repositorio está en la **organización `adepcr`** de GitHub, que es de la in
 - [ ] Que siempre haya **al menos dos Owners** (por ejemplo, la jefatura y alguien de informática).
 - [ ] Recién entonces, quien se va puede salir de la organización (**People** → su nombre → **Remove from organization**) o quedar como **Member**.
 
-El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia al cambiar de administradores.
+El enlace de GitHub Pages (`https://adepcr.github.io/Inventario--archivo-/`) no cambia al cambiar de administradores.
+
+### Vercel (el enlace oficial)
+
+El proyecto de Vercel está en la cuenta personal de quien lo creó (plan gratis, que no permite agregar miembros). Al irse, hay dos caminos:
+
+- [ ] **Transferirlo:** la persona nueva crea su cuenta en Vercel (**Continue with GitHub**) y quien se va entra al proyecto → **Settings → General → Transfer Project** → elige la cuenta nueva. El enlace no cambia.
+- [ ] **O crearlo de nuevo:** la persona nueva importa el repositorio en su Vercel (ver *Vercel* en el [README](README.md): Root Directory **`docs`**, sin build). Si el enlace cambia, actualizarlo en Supabase → **Authentication → URL Configuration** (**Site URL** y **Redirect URLs**) y en este archivo.
+
+Si Vercel se perdiera, la app sigue funcionando en GitHub Pages. Solo hay que poner ese enlace como **Site URL** en Supabase y avisar a los usuarios.
 
 ### Correo `encuesta@adepcr.org`
 
@@ -85,6 +95,7 @@ El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia
 
 - [ ] La persona nueva confirmó que entra a **Supabase** como Owner.
 - [ ] La persona nueva confirmó que puede editar el **repositorio** (o recibió la cuenta).
+- [ ] El proyecto de **Vercel** quedó en la cuenta de la persona nueva y el enlace abre la app.
 - [ ] TI confirmó que tiene la contraseña de **`encuesta@adepcr.org`**.
 - [ ] Se entregó el último **respaldo en Excel**.
 - [ ] (Opcional) **Entregar el historial limpio**, sin las pruebas: primero guardar el CSV del historial (punto 2) y luego, en Supabase → **SQL Editor**, ejecutar:
