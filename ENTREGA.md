@@ -31,7 +31,7 @@ No se entregan las contraseñas personales de quien se va: **se agrega a la pers
 - [ ] Organización → **Team** → **Invite member** → correo de la persona nueva → rol **Owner**.
 - [ ] La persona acepta la invitación desde su correo y aparece como **Owner** (no como invitación pendiente).
 - [ ] La persona entra y confirma que ve el proyecto y la tabla `archivos`.
-- [ ] Contraseña de la base de datos: se entrega en sobre cerrado, o la persona nueva la cambia en **Project Settings → Database → Reset database password**. (Casi nunca se usa; la app no la necesita.)
+- [ ] Contraseña de la base de datos: Supabase **no permite volver a verla**; solo se muestra al crearla. Si no se guardó, la persona nueva pone una nueva en **Project Settings → Database → Reset database password** y la guarda en un gestor de contraseñas. Cambiarla no afecta la app, sus usuarios ni la tarea *mantener activo* (usan la clave pública de `docs/config.js`). Casi nunca se usa.
 - [ ] Si la cuenta de Supabase se creó con **Continue with GitHub**, recordar que quien tenga esa cuenta de GitHub también entra a Supabase.
 
 ### GitHub (la página)
@@ -57,8 +57,8 @@ El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia
 ## 2. Archivos a entregar
 
 - [ ] **Respaldo actual de los datos:** botón **Respaldo** de la app (Excel con el inventario y los préstamos).
-- [ ] **Respaldo del historial** (opcional): Supabase → **Table Editor → historial → Export → Export to CSV**.
-- [ ] **Datos originales** (respaldo histórico, ya no se usan): `2_datos.sql` y el Excel `INVENTARIO_ARCHIVO_GENERAL.xlsx`. No están en este repositorio porque es público.
+- [ ] **Respaldo del historial** (opcional): Supabase → **Table Editor** → en la lista de tablas, los **⋮** junto a **historial** → **Export data → Export table as CSV**. Otra forma: **SQL Editor** → `select * from public.historial order by id;` → **Run** → **Export → Download CSV**.
+- [ ] **Datos originales** (respaldo histórico, ya no se usan): `2_datos.sql` y el Excel `INVENTARIO_ARCHIVO_GENERAL.xlsx`. No están en este repositorio porque es público. Si no se encuentran, no se pierde nada: todos los datos están en Supabase y el respaldo vigente es el botón **Respaldo** de la app. Guardar estos archivos en una carpeta de ADEP (OneDrive o unidad compartida), nunca en GitHub.
 
 ## 3. Lo que la persona nueva debe saber
 
@@ -87,6 +87,11 @@ El enlace de la app (`https://adepcr.github.io/Inventario--archivo-/`) no cambia
 - [ ] La persona nueva confirmó que puede editar el **repositorio** (o recibió la cuenta).
 - [ ] TI confirmó que tiene la contraseña de **`encuesta@adepcr.org`**.
 - [ ] Se entregó el último **respaldo en Excel**.
+- [ ] (Opcional) **Entregar el historial limpio**, sin las pruebas: primero guardar el CSV del historial (punto 2) y luego, en Supabase → **SQL Editor**, ejecutar:
+  ```sql
+  truncate table public.historial restart identity;
+  ```
+  No toca el inventario, los préstamos ni los usuarios, y desde ahí sigue anotando los cambios nuevos. No se puede deshacer. (Desde la app nadie puede borrar el historial.) Si también se quieren quitar los préstamos ya devueltos, descargar antes el **Respaldo** y ejecutar `delete from public.prestamos where devuelto_en is not null;` (nunca borrar los no devueltos).
 - [ ] Recién entonces: salir del equipo de Supabase (**Team → Leave team**) y, si corresponde, del repositorio.
 - [ ] Si el usuario propio de la app ya no se usará, eliminarlo en **Authentication → Users**.
 
