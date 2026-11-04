@@ -3,6 +3,8 @@
 Guía para traspasar la app a otra persona y que siga funcionando sin depender de quien la creó.
 
 > **Este repositorio es público.** No escriba aquí contraseñas, claves secretas ni datos del inventario. Entréguelos en persona, en sobre cerrado o con un gestor de contraseñas.
+>
+> El repositorio es público a propósito: así Vercel y GitHub Pages lo publican gratis. No contiene datos del inventario ni claves secretas.
 
 ## Enlaces
 
