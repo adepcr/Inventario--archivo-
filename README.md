@@ -2,10 +2,11 @@
 
 Aplicación web para buscar los archivos del Archivo General por categoría (área), año, tipo y contenido específico, y ver en qué **estante, nivel y bloque** están. También permite **agregar, editar y eliminar** archivos, **registrar préstamos** (quién se llevó un archivo y cuándo lo devolvió) y **descargar un respaldo en Excel**.
 
-- **App:** https://adepcr.github.io/Inventario--archivo-/
+- **App:** https://inventario-archivo-docs.vercel.app/
+  (también sigue publicada en https://adepcr.github.io/Inventario--archivo-/; las dos usan los mismos datos)
 - **Repositorio oficial:** https://github.com/adepcr/Inventario--archivo- (organización de ADEP en GitHub)
 - **Datos:** [Supabase](https://supabase.com) (base de datos PostgreSQL en la nube, plan gratis)
-- **Página:** GitHub Pages, carpeta [`docs/`](docs)
+- **Página:** Vercel (enlace oficial) y GitHub Pages (respaldo), ambos desde la carpeta [`docs/`](docs)
 - Se puede **instalar como app** en celular y computadora.
 - **¿Traspasar el proyecto a otra persona?** Vea [ENTREGA.md](ENTREGA.md).
 
@@ -25,7 +26,7 @@ Aplicación web para buscar los archivos del Archivo General por categoría (ár
 ## Estructura
 
 ```
-docs/                     la app (lo que publica GitHub Pages)
+docs/                     la app (lo que publican Vercel y GitHub Pages)
   index.html              estructura de la página
   estilos.css             colores y diseño
   app.js                  lógica: sesión, búsqueda, agregar, editar, eliminar, préstamos, respaldo
@@ -61,20 +62,26 @@ El archivo con los datos iniciales (`2_datos.sql`, 1310 archivos del Excel origi
 4. **SQL Editor → New query**: pegue todo [`supabase/3_prestamos.sql`](supabase/3_prestamos.sql) y presione **Run**. (Préstamos y "mantener activo". Se puede ejecutar de nuevo sin perder datos.)
 5. **Authentication → Sign In / Providers**: desactive **Allow new users to sign up**.
 6. **Authentication → Users → Add user → Create new user**: cree el usuario de cada persona (marque *Auto Confirm User*).
-7. **Authentication → URL Configuration → Site URL**: `https://adepcr.github.io/Inventario--archivo-/`
+7. **Authentication → URL Configuration → Site URL**: `https://inventario-archivo-docs.vercel.app/` (el enlace oficial; ver punto 3)
 
 ### 2. Conectar la app
 
 1. En Supabase: **Project Settings → Data API / API Keys**. Copie la **Project URL** y la clave pública (**anon** o **publishable**).
 2. En GitHub abra [`docs/config.js`](docs/config.js), clic en el lápiz (✏️ *Edit*), pegue los dos datos y presione **Commit changes**.
 
-### 3. Activar GitHub Pages
+### 3. Publicar la página (GitHub Pages y Vercel)
 
 1. En este repositorio: **Settings → Pages**.
 2. *Source*: **Deploy from a branch**. *Branch*: **main** y carpeta **/docs**. **Save**.
 3. En uno o dos minutos la app queda en https://adepcr.github.io/Inventario--archivo-/
 
-Cada vez que se cambie algo en `docs/` y se haga commit, GitHub Pages publica la versión nueva sola. Si cambia archivos de la app, suba también el número de `VERSION` en `docs/sw.js` para que los celulares tomen la versión nueva.
+También está publicada en **Vercel** (enlace oficial: https://inventario-archivo-docs.vercel.app/):
+
+1. En https://vercel.com: **Add New… → Project → GitHub** → instalar la app de Vercel en la organización **adepcr**, solo para este repositorio.
+2. **Import** el repositorio. *Framework Preset*: **Other**. *Root Directory*: **`docs`**. Sin comandos de build ni variables. **Deploy**.
+3. En Supabase, agregar el enlace de Vercel en **Redirect URLs** (con `/**` al final) y ponerlo como **Site URL** (ver punto 4).
+
+Cada vez que se cambie algo en `docs/` y se haga commit en `main`, Vercel y GitHub Pages publican la versión nueva solos. Si cambia archivos de la app, suba también el número de `VERSION` en `docs/sw.js` para que los celulares tomen la versión nueva.
 
 ### 4. Contraseñas
 
@@ -83,7 +90,8 @@ En la pantalla de ingreso, la persona escribe su correo y recibe un enlace. Al a
 
 Configuración en Supabase (ya hecha):
 - **Authentication → Emails → SMTP Settings** (*Enable custom SMTP*): remitente `encuesta@adepcr.org`, host `smtp.office365.com`, puerto `587`, usuario `encuesta@adepcr.org` y la contraseña de ese correo. Si se cambia la contraseña de ese correo, hay que actualizarla aquí o dejarán de llegar los mensajes.
-- **Authentication → URL Configuration → Redirect URLs**: `https://adepcr.github.io/Inventario--archivo-/**`
+- **Authentication → URL Configuration → Site URL**: `https://inventario-archivo-docs.vercel.app/`
+- **Authentication → URL Configuration → Redirect URLs**: `https://inventario-archivo-docs.vercel.app/**` y `https://adepcr.github.io/Inventario--archivo-/**` (el enlace del correo abre la misma página desde donde se pidió)
 - Opcional, correo en español: **Authentication → Emails → Templates → Reset Password**
   - Asunto: `Restablecer contraseña - Inventario Archivo General`
   - Mensaje:
