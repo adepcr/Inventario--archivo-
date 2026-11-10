@@ -198,4 +198,4 @@ from public.historial where accion = 'eliminado' and archivo_id = 1234;
 
 - **Quitar acceso a alguien:** Authentication → Users → eliminar el usuario.
 - **Respaldo:** botón **Respaldo** de la app (Excel con el inventario y los préstamos). Recomendado una vez al mes.
-- **Plan gratis:** Supabase pausa el proyecto si pasa 7 días seguidos sin uso. La tarea *mantener activo* lo evita (vea el punto 8). Si aun así se pausara, se reactiva con *Restore project* sin perder datos.
+- **Plan gratis:** Supabase pausa el proyecto si pasa 7 días seguidos sin uso. La tarea *mantener activo* lo evita (vea el punto 8). Si aun así se pausara, se reactiva con *Restore project* sin perder datos. Abi
