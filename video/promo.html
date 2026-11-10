@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Promo Archivo General</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Lienzo fijo de 1920x1080. En el navegador se escala para caber en la ventana. */
+  :root {
+    --g: #008744; --g-deep: #04492a; --g-mint: #8ff0bd; --g-soft: #e8f5ee;
+    --r: #e52521; --vino: #c8102e; --ink: #17241e; --ink-soft: #4f5f57; --line: #e1ebe4;
+  }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #stage {
+    position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden;
+    transform-origin: 0 0; font-family: 'Inter', system-ui, sans-serif; color: #fff;
+    background: radial-gradient(1200px 700px at 50% 45%, #0b2418 0%, #050d09 60%, #020403 100%);
+  }
+  .abs { position: absolute; }
+  .center { left: 50%; top: 50%; }
+  .layer { position: absolute; inset: 0; }
+  #glow { left: 50%; top: 50%; width: 1400px; height: 900px; margin: -450px 0 0 -700px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0,135,68,.35), rgba(0,135,68,0)); }
+  #floorGlow { left: 50%; bottom: -260px; width: 1600px; height: 520px; margin-left: -800px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(143,240,189,.18), rgba(0,0,0,0)); }
+  #vignette { inset: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.65) 100%); }
+
+  /* 1. línea de luz */
+  #line { left: 50%; top: 540px; height: 4px; width: 600px; margin-left: -300px; border-radius: 4px;
+    background: linear-gradient(90deg, transparent, var(--g-mint) 30%, #fff 50%, var(--g-mint) 70%, transparent);
+    box-shadow: 0 0 30px 6px rgba(143,240,189,.6); }
+
+  /* 2. logo */
+  #intro { left: 0; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; }
+  #intro img { width: 220px; height: 220px; border-radius: 50%; box-shadow: 0 0 80px rgba(143,240,189,.35); background: #fff; }
+  .title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 120px; letter-spacing: -2px; line-height: 1; }
+  .kicker { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 34px; letter-spacing: 8px; text-transform: uppercase; color: var(--g-mint); }
+
+  /* 3. teléfono */
+  #phoneWrap { left: 50%; top: 50%; width: 400px; height: 820px; margin: -410px 0 0 -200px; perspective: 1400px; }
+  #phone { width: 100%; height: 100%; border-radius: 58px; background: #0d0f0e; padding: 14px; box-sizing: border-box;
+    box-shadow: 0 0 0 2px #2b3a33, 0 0 0 6px #111, 0 60px 120px rgba(0,0,0,.7), 0 0 90px rgba(0,135,68,.25); }
+  #screen { width: 100%; height: 100%; border-radius: 46px; overflow: hidden; background: #f5f9f6; color: var(--ink); position: relative; }
+  .notch { position: absolute; left: 50%; top: 12px; width: 110px; height: 30px; margin-left: -55px; background: #0d0f0e; border-radius: 20px; z-index: 2; }
+  .appHead { background: var(--g-deep); color: #fff; padding: 62px 24px 22px; }
+  .appHead small { display: block; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--g-mint); font-weight: 600; }
+  .appHead b { font-family: 'Outfit', sans-serif; font-size: 30px; }
+  .search { margin: 18px 18px 8px; background: #fff; border: 2px solid var(--g); border-radius: 16px; padding: 14px 16px; font-size: 18px; display: flex; gap: 10px; align-items: center; }
+  .search .caret { display: inline-block; width: 2px; height: 22px; background: var(--g); vertical-align: middle; }
+  .chips { display: flex; gap: 8px; padding: 6px 18px 4px; }
+  .chip { font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--g-soft); color: var(--g-deep); font-weight: 600; }
+  .row { margin: 10px 18px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; box-shadow: 0 4px 12px -6px rgba(4,73,42,.2); }
+  .row b { font-family: 'Outfit', sans-serif; font-size: 19px; display: block; }
+  .row span { font-size: 14px; color: var(--ink-soft); }
+  .row .loc { margin-top: 8px; display: flex; gap: 6px; }
+  .row .loc i { font-style: normal; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: var(--g-soft); color: var(--g-deep); }
+
+  /* tarjetas flotantes */
+  .card { width: 250px; background: #fff; color: var(--ink); border-radius: 22px; padding: 18px; box-sizing: border-box;
+    box-shadow: 0 30px 60px rgba(0,0,0,.5); }
+  .card .ico { width: 54px; height: 44px; border-radius: 8px; background: var(--g); position: relative; margin-bottom: 12px; }
+  .card .ico::before { content: ''; position: absolute; left: 0; top: -8px; width: 24px; height: 12px; border-radius: 6px 6px 0 0; background: var(--g); }
+  .card b { font-family: 'Outfit', sans-serif; font-size: 22px; display: block; }
+  .card span { font-size: 14px; color: var(--ink-soft); }
+  .card .loc { margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--g-deep); background: var(--g-soft); border-radius: 8px; padding: 5px 8px; display: inline-block; }
+
+  /* ficha detalle */
+  #detail { left: 50%; top: 50%; width: 1040px; height: 480px; margin: -240px 0 0 -520px; background: #fff; color: var(--ink);
+    border-radius: 36px; display: flex; gap: 50px; padding: 50px; box-sizing: border-box; box-shadow: 0 60px 140px rgba(0,0,0,.6), 0 0 120px rgba(0,135,68,.25); }
+  #detail .big { width: 330px; flex: none; border-radius: 26px; background: linear-gradient(160deg, var(--g-soft), #fff); display: grid; place-items: center; }
+  .folder { width: 210px; height: 160px; background: var(--g); border-radius: 16px; position: relative; box-shadow: inset 0 -30px 0 rgba(0,0,0,.12); }
+  .folder::before { content: ''; position: absolute; left: 0; top: -26px; width: 90px; height: 34px; background: var(--g); border-radius: 14px 14px 0 0; }
+  .folder::after { content: ''; position: absolute; left: 22px; right: 22px; top: -12px; height: 40px; background: #fff; border-radius: 6px; transform: rotate(-4deg); z-index: -1; }
+  #detail h2 { font-family: 'Outfit', sans-serif; font-size: 64px; margin: 0; line-height: 1; }
+  #detail .sub { font-size: 24px; color: var(--ink-soft); margin: 12px 0 30px; }
+  .locs { display: flex; gap: 14px; margin-bottom: 40px; }
+  .locs div { background: var(--g-soft); border-radius: 16px; padding: 14px 20px; }
+  .locs small { display: block; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ink-soft); font-weight: 600; }
+  .locs b { font-family: 'Outfit', sans-serif; font-size: 30px; color: var(--g-deep); }
+  #btnVer { display: inline-block; background: var(--vino); color: #fff; font-weight: 700; font-size: 24px; padding: 18px 34px; border-radius: 16px; box-shadow: 0 10px 30px rgba(200,16,46,.4); }
+  #cursor { left: 0; top: 0; width: 40px; height: 40px; }
+
+  /* bodega 3D */
+  #scene3d { left: 50%; top: 50%; width: 0; height: 0; perspective: 1800px; }
+  #floor { position: absolute; left: -560px; top: -380px; width: 1120px; height: 760px; transform-style: preserve-3d;
+    background:
+      repeating-linear-gradient(0deg, rgba(143,240,189,.07) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, rgba(143,240,189,.07) 0 1px, transparent 1px 40px),
+      radial-gradient(closest-side, #0f2a1d, #06110b);
+    border-radius: 20px; box-shadow: 0 0 0 1px rgba(143,240,189,.15); }
+  .blk { position: absolute; height: 60px; width: 196px; transform-style: preserve-3d; }
+  .blk .top { position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(135deg, #3a4a42, #26322c);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); display: grid; place-items: center; font-family: 'Outfit'; font-weight: 700; font-size: 22px; color: rgba(255,255,255,.35); }
+  .blk .side { position: absolute; left: 0; right: 0; bottom: 0; height: 50px; transform-origin: bottom; transform: rotateX(-90deg); background: linear-gradient(0deg,#1d2a23,#2c3b33); }
+  .blk .side2 { position: absolute; top: 0; bottom: 0; right: 0; width: 50px; transform-origin: right; transform: rotateY(90deg); background: linear-gradient(90deg,#26342d,#141d18); }
+  .blk.target .side { background: #006b35; } .blk.target .side2 { background: #04492a; }
+  .blk.target .top { background: linear-gradient(135deg, #12b862, #008744); color: #fff; box-shadow: 0 0 60px rgba(143,240,189,.8); }
+  .estLbl { position: absolute; left: 6px; font-family: 'Outfit'; font-weight: 700; font-size: 18px; color: rgba(143,240,189,.6); }
+  #path { position: absolute; left: 0; top: 0; overflow: visible; transform: translateZ(2px); }
+  #ring { transform-style: preserve-3d; position: absolute; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; border: 4px solid var(--g-mint); }
+  #dot { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 8px var(--g-mint); }
+  #hud { left: 80px; top: 70px; background: rgba(255,255,255,.95); color: var(--ink); border-radius: 22px; padding: 22px 28px; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+  #hud small { font-size: 16px; text-transform: uppercase; letter-spacing: 2px; color: var(--ink-soft); font-weight: 700; }
+  #hud b { display: block; font-family: 'Outfit'; font-size: 38px; color: var(--g-deep); }
+  #hud .bar { height: 6px; border-radius: 6px; background: var(--g-soft); margin-top: 12px; overflow: hidden; }
+  #hud .bar i { display: block; height: 100%; background: var(--g); }
+
+  /* préstamo */
+  #loan { left: 50%; top: 50%; width: 860px; margin: -230px 0 0 -430px; background: #fff; color: var(--ink); border-radius: 36px; padding: 46px 54px; box-sizing: border-box;
+    box-shadow: 0 60px 140px rgba(0,0,0,.6); }
+  #loan .hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+  #loan .hd b { font-family: 'Outfit'; font-size: 44px; }
+  .badgeWrap { perspective: 600px; width: 230px; height: 58px; position: relative; }
+  .badge { position: absolute; inset: 0; border-radius: 999px; display: grid; place-items: center; font-weight: 800; font-size: 24px; backface-visibility: hidden; }
+  #bPrest { background: #fcebea; color: var(--r); }
+  #bDev { background: var(--g-soft); color: var(--g); transform: rotateX(180deg); }
+  .who { display: flex; align-items: center; gap: 22px; padding: 24px; border-radius: 22px; background: #f5f9f6; margin-bottom: 18px; }
+  .avatar { width: 74px; height: 74px; border-radius: 50%; background: var(--g); color: #fff; display: grid; place-items: center; font-family: 'Outfit'; font-weight: 800; font-size: 30px; }
+  .who b { font-family: 'Outfit'; font-size: 32px; display: block; }
+  .who span { font-size: 20px; color: var(--ink-soft); }
+  .dates { display: flex; gap: 18px; font-size: 22px; }
+  .dates div { flex: 1; border: 2px solid var(--line); border-radius: 18px; padding: 16px 20px; }
+  .dates small { display: block; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ink-soft); font-weight: 700; }
+
+  /* respaldo */
+  #backup { left: 0; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; }
+  .xls { width: 230px; height: 290px; border-radius: 22px; background: #fff; position: relative; box-shadow: 0 50px 100px rgba(0,0,0,.6); overflow: hidden; }
+  .xls::before { content: ''; position: absolute; right: 0; top: 0; width: 64px; height: 64px; background: linear-gradient(225deg, #04492a 50%, #dfe9e3 50%); }
+  .xls .grid { position: absolute; left: 30px; right: 30px; top: 110px; bottom: 40px;
+    background: repeating-linear-gradient(0deg, #cfe3d6 0 2px, transparent 2px 28px), repeating-linear-gradient(90deg, #cfe3d6 0 2px, transparent 2px 56px); }
+  .xls .tag { position: absolute; left: -16px; top: 30px; background: var(--g); color: #fff; font-family: 'Outfit'; font-weight: 800; font-size: 40px; padding: 10px 26px; border-radius: 12px; }
+  #backup .lbl { font-family: 'Outfit'; font-size: 64px; font-weight: 700; }
+  #backup .prog { width: 520px; height: 12px; border-radius: 12px; background: rgba(255,255,255,.1); overflow: hidden; }
+  #backup .prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--g), var(--g-mint)); box-shadow: 0 0 20px var(--g-mint); }
+
+  /* frase */
+  #slogan { left: 0; right: 0; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 30px;
+    font-family: 'Outfit'; font-weight: 800; font-size: 130px; letter-spacing: -2px; }
+  #slogan span { display: inline-block; position: relative; }
+  #slogan .acc { color: var(--g-mint); }
+  #slogan .acc::after { content: ''; position: absolute; left: 0; bottom: -6px; height: 12px; width: var(--u, 0%); background: var(--r); border-radius: 12px; }
+
+  /* cierre */
+  #outro { left: 0; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
+  #outro img { width: 180px; height: 180px; border-radius: 50%; background: #fff; box-shadow: 0 0 90px rgba(143,240,189,.4); }
+  #outro .url { font-size: 30px; color: rgba(255,255,255,.75); font-weight: 500; margin-top: 10px; }
+  #outro .uline { width: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--g-mint), transparent); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="abs" id="glow"></div>
+  <div class="abs" id="floorGlow"></div>
+
+  <div class="abs" id="line"></div>
+
+  <div class="abs" id="intro">
+    <img src="../docs/iconos/logo-adep.png" alt="">
+    <div class="kicker">ADEP · Inventario</div>
+    <div class="title">Archivo General</div>
+  </div>
+
+  <div class="abs" id="phoneWrap"><div id="phone"><div id="screen">
+    <div class="notch"></div>
+    <div class="appHead"><small>ADEP · Inventario detallado</small><b>Archivo General</b></div>
+    <div class="search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#008744" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span id="typed"></span><span class="caret" id="caret"></span></div>
+    <div class="chips"><span class="chip">Contabilidad</span><span class="chip">2023</span><span class="chip">Todas</span></div>
+    <div id="rows"></div>
+  </div></div></div>
+
+  <div class="layer" id="cards"></div>
+
+  <div class="abs" id="detail">
+    <div class="big"><div class="folder"></div></div>
+    <div>
+      <h2>Caja chica</h2>
+      <div class="sub">Contabilidad · 2023 · Enero a abril</div>
+      <div class="locs">
+        <div><small>Estante</small><b>3</b></div>
+        <div><small>Nivel</small><b>2 FRONTAL</b></div>
+        <div><small>Bloque</small><b>C</b></div>
+      </div>
+      <span id="btnVer">Ver ubicación</span>
+    </div>
+  </div>
+  <svg class="abs" id="cursor" viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#fff" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/></svg>
+
+  <div class="abs" id="scene3d"><div id="floor">
+    <svg id="path" width="1120" height="760"><path id="route" d="" fill="none" stroke="#8ff0bd" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 10px #8ff0bd)"/></svg>
+    <div id="ring"></div><div id="dot"></div>
+  </div></div>
+  <div class="abs" id="hud"><small>Ubicación</small><b>Estante 3 · Nivel 2 · Bloque C</b><div class="bar"><i id="hudBar"></i></div></div>
+
+  <div class="abs" id="loan">
+    <div class="hd"><b>Préstamo</b><div class="badgeWrap"><div id="badge" style="position:absolute;inset:0;transform-style:preserve-3d"><div class="badge" id="bPrest">Prestado</div><div class="badge" id="bDev">Devuelto ✓</div></div></div></div>
+    <div class="who"><div class="avatar">AR</div><div><b>Ana Rojas</b><span>Contabilidad · Caja chica 2023</span></div></div>
+    <div class="dates"><div><small>Salió</small>10 nov 2026</div><div id="retDate"><small>Devuelto</small><span id="retTxt">—</span></div></div>
+  </div>
+
+  <div class="abs" id="backup">
+    <div class="xls"><div class="tag">XLSX</div><div class="grid"></div></div>
+    <div class="lbl">Respaldo en Excel</div>
+    <div class="prog"><i id="progBar"></i></div>
+  </div>
+
+  <div class="abs" id="slogan"><span>Cada</span><span>archivo,</span><span>en</span><span>su</span><span class="acc">lugar.</span></div>
+
+  <div class="abs" id="outro">
+    <img src="../docs/iconos/logo-adep.png" alt="">
+    <div class="title">Archivo General</div>
+    <div class="uline" id="uline"></div>
+    <div class="kicker">Inventario · ADEP</div>
+    <div class="url">inventario-archivo-docs.vercel.app</div>
+  </div>
+
+  <div class="abs" id="vignette"></div>
+</div>
+
+<script>
+const DUR = 23;          // segundos
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => clamp((t - a) / (b - a));
+const eo = x => 1 - Math.pow(1 - x, 3);
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const back = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const win = (t, a, b, fi = .4, fo = .4) => Math.min(eo(p(t, a, a + fi)), 1 - eio(p(t, b - fo, b)));
+function S(el, o, tf, blur) {
+  el.style.opacity = o;
+  el.style.visibility = o <= 0.001 ? 'hidden' : 'visible';
+  if (tf !== undefined) el.style.transform = tf;
+  el.style.filter = blur ? `blur(${blur}px)` : '';
+}
+
+/* ---------- contenido ---------- */
+const QUERY = 'caja chica';
+const ROWS = [
+  ['Caja chica', 'Contabilidad · 2023', ['Est. 3', 'Nivel 2', 'Bloque C']],
+  ['Caja chica', 'Contabilidad · 2022', ['Est. 3', 'Nivel 1', 'Bloque C']],
+  ['Caja chica', 'Contabilidad · 2021', ['Est. 4', 'Nivel 3', 'Bloque A']],
+];
+$('rows').innerHTML = ROWS.map(r => `<div class="row"><b>${r[0]}</b><span>${r[1]}</span><div class="loc">${r[2].map(x => `<i>${x}</i>`).join('')}</div></div>`).join('');
+const rowEls = [...document.querySelectorAll('.row')];
+
+const CARDS = [
+  ['Planillas', 'Recursos Humanos · 2022', 'Est. 1 · Bloque B', -620, -260, -8],
+  ['Actas de junta', 'Dirección · 2021', 'Est. 2 · Bloque A', -660, 40, 5],
+  ['Renuncias', 'Recursos Humanos · 2020', 'Est. 5 · Bloque D', -560, 300, -4],
+  ['Facturas', 'Contabilidad · 2024', 'Est. 3 · Bloque B', 620, -270, 7],
+  ['Caja chica', 'Contabilidad · 2023', 'Est. 3 · Bloque C', 660, 30, -5],
+  ['Contratos', 'Legal · 2019', 'Est. 4 · Bloque A', 570, 300, 4],
+];
+$('cards').innerHTML = CARDS.map(c => `<div class="abs card center"><div class="ico"></div><b>${c[0]}</b><span>${c[1]}</span><br><span class="loc">${c[2]}</span></div>`).join('');
+const cardEls = [...document.querySelectorAll('.card')];
+
+/* bodega: 5 estantes x 4 bloques */
+const floor = $('floor'), blks = [];
+const EST_Y = i => 70 + i * 130, BX = j => 130 + j * 216;
+for (let i = 0; i < 5; i++) {
+  const l = document.createElement('div'); l.className = 'estLbl'; l.style.top = (EST_Y(i) + 18) + 'px'; l.textContent = 'E' + (i + 1); floor.appendChild(l);
+  for (let j = 0; j < 4; j++) {
+    const b = document.createElement('div'); b.className = 'blk' + (i === 2 && j === 2 ? ' target' : '');
+    b.style.left = BX(j) + 'px'; b.style.top = EST_Y(i) + 'px';
+    b.innerHTML = `<div class="side"></div><div class="side2"></div><div class="top">${'ABCD'[j]}</div>`;
+    floor.appendChild(b); blks.push({ el: b, i, j });
+  }
+}
+const AISLE = EST_Y(2) + 60 + 35, TX = BX(2) + 98;
+const PTS = [[60, 720], [60, AISLE], [TX, AISLE]];
+const route = $('route');
+route.setAttribute('d', 'M' + PTS.map(q => q.join(',')).join(' L'));
+const RLEN = route.getTotalLength();
+route.style.strokeDasharray = RLEN;
+$('ring').style.left = $('dot').style.left = TX + 'px';
+$('ring').style.top = $('dot').style.top = AISLE + 'px';
+
+const sloganEls = [...document.querySelectorAll('#slogan span')];
+
+/* ---------- línea de tiempo ---------- */
+function render(t) {
+  // fondo
+  $('glow').style.opacity = 0.5 + 0.5 * Math.sin(t * 0.8) * 0.3 + p(t, 0.5, 2) * 0.3;
+  $('floorGlow').style.opacity = p(t, 0, 2);
+
+  // 0 – 2.2  línea de luz
+  {
+    const o = win(t, 0.1, 2.2, .3, .5);
+    const w = lerp(0, 900, eo(p(t, 0.1, 1.4)));
+    S($('line'), o, `scaleX(${w / 600}) scaleY(${1 - p(t, 1.6, 2.2) * .8})`);
+  }
+
+  // 1.4 – 4.3  logo + título
+  {
+    const o = win(t, 1.4, 4.3, .8, .5);
+    const s = lerp(1.15, 1, eo(p(t, 1.4, 3))) * lerp(1, .8, eio(p(t, 3.8, 4.3)));
+    const blur = lerp(18, 0, eo(p(t, 1.4, 2.4))) + lerp(0, 14, p(t, 3.8, 4.3));
+    S($('intro'), o, `scale(${s}) translateY(${lerp(0, -80, eio(p(t, 3.8, 4.3)))}px)`, blur);
+  }
+
+  // 3.9 – 9.4  teléfono con búsqueda
+  {
+    const o = win(t, 3.9, 9.4, .5, .5);
+    const rise = eo(p(t, 3.9, 5));
+    const rx = lerp(35, 0, rise), y = lerp(500, 0, rise);
+    const s = lerp(1, .55, eio(p(t, 8.9, 9.4)));
+    S($('phoneWrap'), o, `translateY(${y}px) scale(${s})`);
+    $('phone').style.transform = `rotateX(${rx}deg) rotateY(${Math.sin(t * .9) * 4}deg)`;
+    const n = Math.floor(p(t, 5.1, 6.4) * QUERY.length);
+    $('typed').textContent = QUERY.slice(0, n);
+    $('caret').style.opacity = (t < 6.6 && Math.floor(t * 2.5) % 2 === 0) || (t > 5.1 && t < 6.4) ? 1 : 0;
+    rowEls.forEach((r, k) => {
+      const q = eo(p(t, 6.5 + k * .15, 7.0 + k * .15));
+      r.style.opacity = q; r.style.transform = `translateY(${lerp(30, 0, q)}px)`;
+    });
+  }
+
+  // 7.2 – 9.4  tarjetas flotando alrededor
+  cardEls.forEach((c, k) => {
+    const a = 7.2 + k * .12;
+    const q = back(p(t, a, a + .8));
+    const o = win(t, a, 9.4, .3, .5);
+    const [, , , x, y, r] = CARDS[k];
+    const fl = Math.sin(t * 1.6 + k) * 10;
+    const out = eio(p(t, 8.9, 9.4));
+    S(c, o, `translate(-50%,-50%) translate(${lerp(0, x, q) * (1 - out * .4)}px, ${lerp(0, y, q) + fl}px) rotate(${r * q}deg) scale(${lerp(.3, 1, clamp(q, 0, 1.2)) * (1 - out * .3)})`);
+  });
+
+  // 9.3 – 11.6  ficha detalle + clic
+  {
+    const o = win(t, 9.3, 11.6, .4, .4);
+    const q = back(p(t, 9.3, 10));
+    const press = t > 10.75 && t < 10.95 ? .96 : 1;
+    S($('detail'), o, `scale(${lerp(.6, 1, q) * lerp(1, 1.3, eio(p(t, 11.2, 11.6)))})`, lerp(0, 10, p(t, 11.2, 11.6)));
+    $('btnVer').style.transform = `scale(${press})`;
+    const c = eo(p(t, 10.0, 10.75));
+    const cx = lerp(1500, 1180, c), cy = lerp(950, 772, c);
+    S($('cursor'), win(t, 10.0, 11.3, .2, .3), `translate(${cx}px, ${cy}px) scale(${t > 10.75 && t < 10.95 ? .85 : 1})`);
+  }
+
+  // 11.4 – 15.0  bodega 3D con ruta
+  {
+    const o = win(t, 11.4, 15.0, .5, .5);
+    const cam = eio(p(t, 11.4, 14.8));
+    const rz = lerp(-25, -40, cam), rx = lerp(50, 60, cam), s = lerp(.85, 1.15, cam);
+    S($('scene3d'), o);
+    floor.style.transform = `translate(${lerp(40, 0, cam)}px, ${lerp(40, 0, cam)}px) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${s})`;
+    blks.forEach(({ el, i, j }) => {
+      const q = back(p(t, 11.5 + (i * 4 + j) * .03, 12.1 + (i * 4 + j) * .03));
+      const h = (i === 2 && j === 2 && t > 13.4) ? 70 + Math.sin((t - 13.4) * 6) * 6 : 40;
+      const z = Math.max(0, q * h);
+      el.children[2].style.transform = `translateZ(${z}px)`;
+      el.children[0].style.height = el.children[1].style.width = z + 'px';
+    });
+    route.style.strokeDashoffset = RLEN * (1 - eio(p(t, 12.2, 13.4)));
+    const d = eio(p(t, 12.2, 13.4));
+    let x = PTS[0][0], y = PTS[0][1];
+    { // posición del punto sobre la ruta
+      const pt = route.getPointAtLength(RLEN * d); x = pt.x; y = pt.y;
+    }
+    $('dot').style.left = x + 'px'; $('dot').style.top = y + 'px';
+    $('dot').style.opacity = p(t, 12.2, 12.4);
+    const ring = ((t - 13.4) % 0.9) / 0.9;
+    $('ring').style.opacity = t > 13.4 ? 1 - ring : 0;
+    $('ring').style.transform = `scale(${1 + ring * 3})`;
+    S($('hud'), win(t, 12.0, 15.0, .4, .5), `translateY(${lerp(-30, 0, eo(p(t, 12.0, 12.5)))}px)`);
+    $('hudBar').style.width = (d * 100) + '%';
+  }
+
+  // 14.8 – 17.6  préstamo y devolución
+  {
+    const o = win(t, 14.8, 17.6, .4, .4);
+    const q = back(p(t, 14.8, 15.5));
+    S($('loan'), o, `translateY(${lerp(120, 0, clamp(q, 0, 1.1))}px) scale(${lerp(.9, 1, q) * lerp(1, .9, eio(p(t, 17.2, 17.6)))})`, lerp(0, 10, p(t, 17.2, 17.6)));
+    const f = eio(p(t, 16.1, 16.6));
+    $('badge').style.transform = `rotateX(${f * 180}deg)`;
+    $('retTxt').textContent = t > 16.4 ? '12 nov 2026' : '—';
+    $('retDate').style.borderColor = t > 16.4 ? '#008744' : '';
+  }
+
+  // 17.4 – 19.6  respaldo en Excel
+  {
+    const o = win(t, 17.4, 19.6, .3, .4);
+    S($('backup'), o, `scale(${lerp(1, .9, eio(p(t, 19.2, 19.6)))})`, lerp(0, 10, p(t, 19.2, 19.6)));
+    const d = back(p(t, 17.4, 18.1));
+    document.querySelector('.xls').style.transform = `translateY(${lerp(-500, 0, clamp(d, 0, 1.2))}px) rotate(${lerp(-12, 0, eo(p(t, 17.4, 18.3)))}deg)`;
+    $('progBar').style.width = (eio(p(t, 18.1, 19.1)) * 100) + '%';
+  }
+
+  // 19.5 – 21.3  frase
+  {
+    S($('slogan'), win(t, 19.5, 21.3, .1, .4), `scale(${lerp(1, 1.06, p(t, 19.5, 21.3))})`, lerp(0, 12, p(t, 20.9, 21.3)));
+    sloganEls.forEach((s, k) => {
+      const q = eo(p(t, 19.6 + k * .18, 20.1 + k * .18));
+      s.style.opacity = q; s.style.transform = `translateY(${lerp(40, 0, q)}px)`; s.style.filter = `blur(${lerp(10, 0, q)}px)`;
+    });
+    sloganEls[4].style.setProperty('--u', (eio(p(t, 20.5, 20.9)) * 100) + '%');
+  }
+
+  // 21.1 – 23  cierre
+  {
+    const o = win(t, 21.1, DUR, .5, .5);
+    S($('outro'), o, `scale(${lerp(1.1, 1, eo(p(t, 21.1, 22.2)))})`, lerp(14, 0, eo(p(t, 21.1, 21.8))));
+    $('uline').style.width = (eio(p(t, 21.5, 22.3)) * 700) + 'px';
+  }
+}
+
+/* ---------- vista previa en el navegador ---------- */
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  const st = $('stage');
+  st.style.transform = `scale(${s})`;
+  st.style.left = (innerWidth - 1920 * s) / 2 + 'px';
+  st.style.top = (innerHeight - 1080 * s) / 2 + 'px';
+}
+const RENDER = location.search.includes('render');
+render(0);
+if (!RENDER) {
+  addEventListener('resize', fit); fit();
+  const t0 = performance.now();
+  (function loop() { render(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); })();
+}
+document.fonts.ready.then(() => { window.READY = true; });
+</script>
+</body>
+</html>
