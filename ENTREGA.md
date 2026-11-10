@@ -11,7 +11,7 @@ Guía para traspasar la app a otra persona y que siga funcionando sin depender d
 | Qué | Dónde |
 |---|---|
 | App | https://inventario-archivo-docs.vercel.app/ (oficial) · https://adepcr.github.io/Inventario--archivo-/ (respaldo) |
-| Código (este repositorio) | https://github.com/adepcr/Inventario--archivo- (organización `adepcr`) |
+| Código (este repositorio) | https://github.com/adepcr/Inventario--archivo-Abigail-Rashid (organización `adepcr`) |
 | Publicación en Vercel | https://vercel.com/dashboard (proyecto `inventario-archivo-docs`) |
 | Base de datos y usuarios | https://supabase.com/dashboard (proyecto `inventario-archivo`) |
 | Correo que envía los avisos | `encuesta@adepcr.org` (Microsoft 365, cuenta de la institución) |
