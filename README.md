@@ -10,12 +10,6 @@ Aplicación web para buscar los archivos del Archivo General por categoría (ár
 - Se puede **instalar como app** en celular y computadora.
 - **¿Traspasar el proyecto a otra persona?** Vea [ENTREGA.md](ENTREGA.md).
 
-## Aplicaciones de ADEP
-
-- **Página Carnet digital:** https://carnet-adep.vercel.app
-- **Sistema de votación:** https://adep-vota.web.app
-- **Aplicación Archivo general:** https://inventario-archivo-docs.vercel.app/
-
 ## Seguridad
 
 - Hay que iniciar sesión con correo y contraseña. Sin sesión no se ve ningún dato.
