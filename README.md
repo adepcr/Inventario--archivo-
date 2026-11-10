@@ -4,7 +4,7 @@ Aplicación web para buscar los archivos del Archivo General por categoría (ár
 
 - **App:** https://inventario-archivo-docs.vercel.app/
   (también sigue publicada en https://adepcr.github.io/Inventario--archivo-/; las dos usan los mismos datos)
-- **Repositorio oficial:** https://github.com/adepcr/Inventario--archivo- (organización de ADEP en GitHub)
+- **Repositorio oficial:** https://github.com/adepcr/Inventario--archivo-Abigail-Rashid (organización de ADEP en GitHub)
 - **Datos:** [Supabase](https://supabase.com) (base de datos PostgreSQL en la nube, plan gratis)
 - **Página:** Vercel (enlace oficial) y GitHub Pages (respaldo), ambos desde la carpeta [`docs/`](docs)
 - Se puede **instalar como app** en celular y computadora.
