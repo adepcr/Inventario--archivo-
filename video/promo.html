@@ -134,7 +134,38 @@
 
 <script src="capturas/datos.js"></script>
 <script>
-const DUR = 24;          // segundos
+const DUR_ANIM = 24;     // duración de la animación base, en segundos
+
+/* ---------- ritmo: pausas para que dé tiempo de leer ----------
+   Cada tramo [desde, hasta, veces] se reproduce "veces" más lento. Para dar más tiempo
+   en una escena, suba el número; para acortarla, bájelo (1 = velocidad normal). */
+const LENTO = [
+  [2.4, 3.8, 2],     // logo y título
+  [4.9, 5.25, 3],    // pantalla de ingreso
+  [6.0, 7.5, 2],     // se escribe "caja chica"
+  [7.85, 8.05, 8],   // lista de resultados
+  [9.0, 9.6, 2.5],   // tarjetas alrededor del teléfono
+  [11.1, 11.6, 6],   // ubicación: Estante, Nivel y Bloque
+  [12.6, 13.4, 3.5], // formulario de préstamo
+  [13.8, 14.8, 2.5], // archivo prestado
+  [15.0, 15.5, 5],   // lista de prestados
+  [18.3, 18.6, 6],   // respaldo en Excel
+  [20.5, 20.8, 6],   // frase final
+  [22.3, 23.4, 2],   // cierre
+];
+const DUR = LENTO.reduce((d, [a, b, k]) => d + (b - a) * (k - 1), DUR_ANIM);   // duración real del video
+// convierte el segundo real del video en el segundo de la animación base
+function tiempoAnim(T) {
+  let t = 0, real = 0;
+  for (const [a, b, k] of LENTO) {
+    if (T < real + (a - t)) return t + (T - real);
+    real += a - t; t = a;
+    if (T < real + (b - a) * k) return a + (T - real) / k;
+    real += (b - a) * k; t = b;
+  }
+  return Math.min(DUR_ANIM, t + (T - real));
+}
+const render = T => escena(tiempoAnim(T));
 const $ = id => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const p = (t, a, b) => clamp((t - a) / (b - a));
@@ -182,7 +213,7 @@ $('fileName').textContent = DATOS.nombreExcel || 'Respaldo-Inventario-Archivo.xl
 const sloganEls = [...document.querySelectorAll('#slogan span')];
 
 /* ---------- línea de tiempo ---------- */
-function render(t) {
+function escena(t) {
   $('glow').style.opacity = 0.55 + p(t, 0.5, 2) * 0.3;
   $('floorGlow').style.opacity = p(t, 0, 2);
 
@@ -229,7 +260,7 @@ function render(t) {
   }
 
   // textos laterales
-  S($('cap1'), win(t, 6.0, 8.0, .5, .35), `translateY(-50%) translateX(${lerp(-40, 0, eo(p(t, 6.0, 6.6)))}px)`);
+  S($('cap1'), win(t, 6.0, 8.4, .5, .35), `translateY(-50%) translateX(${lerp(-40, 0, eo(p(t, 6.0, 6.6)))}px)`);
   {
     const o = win(t, 12.4, 15.8, .5, .4);
     $('cap2').classList.add('der');
@@ -286,7 +317,7 @@ function render(t) {
   }
 
   // 21.0 – 24  cierre
-  S($('outro'), win(t, 21.0, DUR, .5, .5), `scale(${lerp(1.1, 1, eo(p(t, 21.0, 22.1)))})`, lerp(14, 0, eo(p(t, 21.0, 21.7))));
+  S($('outro'), win(t, 21.0, DUR_ANIM, .5, .5), `scale(${lerp(1.1, 1, eo(p(t, 21.0, 22.1)))})`, lerp(14, 0, eo(p(t, 21.0, 21.7))));
   $('uline').style.width = (eio(p(t, 21.4, 22.2)) * 700) + 'px';
 }
 

@@ -1,6 +1,6 @@
 # Video promocional
 
-Animación de 24 segundos del Inventario del Archivo General. Las pantallas que se ven son la **app real**
+Animación de 42 segundos del Inventario del Archivo General. Las pantallas que se ven son la **app real**
 (carpeta `docs/`), capturadas con **datos de ejemplo inventados**: el video no muestra datos reales del inventario.
 
 - `capturar.js`: abre la app real en un navegador, la usa (inicia sesión, busca "caja chica", presta un archivo,
@@ -24,5 +24,5 @@ Versión vertical para TikTok/Reels (1080x1920, con texto arriba):
 ffmpeg -i video/promo.mp4 -vf "scale=1080:-2,pad=1080:1920:0:(oh-ih)/2:black,drawtext=text='Hecho con Claude':fontcolor=white:fontsize=60:x=(w-tw)/2:y=470,drawtext=text='Solo 1 prompt':fontcolor=white:fontsize=60:x=(w-tw)/2:y=550" -c:v libx264 -crf 18 -pix_fmt yuv420p video/promo-vertical.mp4
 ```
 
-Los textos y tiempos de cada escena están en la función `render(t)` de `promo.html`; los datos de ejemplo, en `supabase-falso.js`.
+Los textos y tiempos de cada escena están en la función `escena(t)` de `promo.html`. Para dar más o menos tiempo de lectura a una escena, cambie la lista `LENTO`; los datos de ejemplo, en `supabase-falso.js`.
 Los MP4 no se suben al repositorio (ver `.gitignore`).
